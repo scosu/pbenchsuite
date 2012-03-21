@@ -1,0 +1,37 @@
+# This file configures the ptestsuitemaster
+
+[general]
+# If this is set to 1, the ptestsuitemaster will copy the results to the master.
+writeback_results = 1
+
+# The following sections define a testenvironment. The section name is placed
+# in the testsuite run name.
+# The only necessary option is "testsuite_path"
+
+[testenvironment1]
+# if ssh_host is defined, all commands will be executed on this remote host
+ssh_host = fileserver
+# comma-seperated list of ssh options
+ssh_option = -p, 22
+# Command to setup the test environment. This is executed before the pre_cmd,
+# so you could setup a kernel and reboot the host. All commands have to be
+# comma-seperated. To use multiple commands you can start a shell and execute
+# them there.
+setup_cmd = echo,bla
+pre_cmd = reboot
+post_cmd = echo,blub
+# Where is the ptestsuite script located.
+testsuite_path = /home/scosu/test/suite/ptestsuite.py
+# Where should the result directory be created. In this example there would be
+# a directory /tmp/results after running
+working_dir = /home/scosu/test/suite/
+# sleep time in seconds between executing the commands setup, pre and post
+sleep_between = 1
+# Which testsuites should be executed
+testsuites = dummy,dummy
+
+[testenvironment2]
+ssh_host = fileserver
+testsuite_path = /home/scosu/test/suite/ptestsuite.py
+working_dir = /home/scosu/test/suite/
+testsuites = dummy
