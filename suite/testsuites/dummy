@@ -1,0 +1,40 @@
+# This file can configure everything that is essential for the testsuite.
+
+[general]
+# min_runs defines the minimum runs per test
+min_runs = 6
+# max_runs defines the maximum runs per test
+max_runs = 10
+# stderr is multiplied with the average result to get the maximal allowed
+# standard error.
+# Example:
+# Average result is 20, stderr is 0.01. Then ptestsuite tries to reach a
+# standard error less than 20*0.01=0.2. As soon as the standard error is small
+# enough and the minimum runs are done, ptestsuite continues with the next test.
+stderr = 0.01
+
+# After this general section the tests are following. The tests are executed in
+# the order defined in this configuration file. The section name is the name
+# for the result directory.
+
+# All options in a test section are optional.
+[dummyname]
+# If test is not defined, the section name is used as test identifier.
+test = dummy
+
+# All args options will overwrite the settings of the test's config file.
+# pre_args is a list of comma-seperated arguments for the pre script.
+#pre_args = 13,bla,34
+# args is a list of comma-seperated arguments passed to the hdr and run script.
+#args = -p,22,localhost
+args = +%s
+#post_args = 55,2443efsdv
+
+# The test will be executed at least 'min_runs' times
+#min_runs = 10
+# Maximum runs
+#max_runs = 42
+
+[dummytest2]
+test = dummy
+args = +%S
