@@ -1,5 +1,5 @@
 == PTestSuite ==
 
-PTestSuite are multiple python scripts which will help you in automatically
-executing multiple benchmarks and record the results. Also there is a monitor
+PTestSuite is a framework which will help you to automatically
+execute multiple benchmarks and record the results. Also there is a monitor
 interface to record the state of the system.
