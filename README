@@ -1,4 +1,5 @@
-== PTestSuite ==
+PTestSuite
+==========
 
 PTestSuite is a framework which will help you to automatically
 execute multiple benchmarks and record the results. Also there is a monitor
