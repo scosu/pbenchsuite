@@ -1,0 +1,5 @@
+
+All files contain the necessary information.
+
+The files hdr,prei,post and config are optional. run is required. All existent files
+have to be executable.

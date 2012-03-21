@@ -1,0 +1,7 @@
+#!/bin/bash
+# This file should handle the arguments given to the normal run script. But
+# instead of running the test, it should create a matching header, which
+# contains a description for each result field. It has to be one comma-seperated
+# line.
+
+echo "Date_in_seconds"

@@ -1,0 +1,6 @@
+[general]
+min_runs = 4
+max_runs = 5
+pre_args = -p,42,23
+args = +%s
+post_args = -x,d
