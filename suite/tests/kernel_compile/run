@@ -1,0 +1,34 @@
+#!/usr/bin/python3
+import time
+import os
+import subprocess
+import sys
+
+f = open('/proc/cpuinfo', 'r')
+procs = f.read()
+f.close()
+num_procs = 0
+for i in procs.splitlines():
+	if i.startswith('processor'):
+		num_procs += 1
+num_procs *= 2
+
+f = open('kernel_version', 'r')
+ver = f.read().splitlines()[0].strip()
+f.close()
+
+os.chdir('linux-' + ver)
+cmd = ['make']
+if len(sys.argv) > 1:
+	cmd += sys.argv[1:]
+else:
+	cmd.append('-j')
+	cmd.append(str(num_procs))
+f = open('/dev/null', 'w')
+start = time.time()
+p = subprocess.Popen(cmd, stdout=f, stderr=f)
+p.wait()
+end = time.time()
+f.close()
+print(end - start)
+

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ver=`cat kernel_version`
+
+cd linux-${ver}
+make clean

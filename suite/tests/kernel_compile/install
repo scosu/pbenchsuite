@@ -1,0 +1,11 @@
+#!/bin/bash
+
+
+ver=`cat kernel_version`
+wget -c http://www.kernel.org/pub/linux/kernel/v3.0/linux-${ver}.tar.bz2 -O linux-${ver}.tar.bz2
+tar -xf linux-${ver}.tar.bz2
+cd linux-${ver}
+wget http://allfex.org/files/ptestsuite/kernel_compile/config-${ver} -O .config
+make oldconfig
+make clean
+
