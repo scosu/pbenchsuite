@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "compress_time_in_s,decompress_time_in_s"

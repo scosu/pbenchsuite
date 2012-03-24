@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+
+import time
+import subprocess
+import os
+
+cmd = ['gzip', '-c', 'testfile']
+
+gzip = open('tmp/testfile.gz', 'w')
+
+start = time.time()
+p = subprocess.Popen(cmd, stdout=gzip)
+p.wait()
+end = time.time()
+compress = end - start
+
+gzip.close()
+
+os.chdir('tmp')
+
+cmd = ['gzip', '-d', 'testfile.gz']
+start = time.time()
+p = subprocess.Popen(cmd)
+p.wait()
+end = time.time()
+decompress = end - start
+
+print(str(compress) + ',' + str(decompress))
+

@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+
+import time
+import subprocess
+import os
+
+cmd = ['bzip2', '-c', 'testfile']
+
+bzip2 = open('tmp/testfile.bz2', 'w')
+
+start = time.time()
+p = subprocess.Popen(cmd, stdout=bzip2)
+p.wait()
+end = time.time()
+compress = end - start
+
+bzip2.close()
+
+os.chdir('tmp')
+
+cmd = ['bunzip2', 'testfile.bz2']
+start = time.time()
+p = subprocess.Popen(cmd)
+p.wait()
+end = time.time()
+decompress = end - start
+
+print(str(compress) + ',' + str(decompress))
+

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+if ! whereis gzip | grep -q "/"
+then
+	echo "gzip"
+fi

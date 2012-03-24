@@ -1,0 +1,6 @@
+#!/bin/bash
+
+if ! whereis bzip2 | grep -q "/"
+then
+	echo "bzip2"
+fi
