@@ -1,0 +1,4 @@
+#!/bin/bash
+
+gcc -o pipe-test pipe-test.c
+
