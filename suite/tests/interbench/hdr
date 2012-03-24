@@ -1,0 +1,20 @@
+#!/usr/bin/python3
+tests = {'audio':
+	['none', 'video', 'x', 'burn', 'write', 'read', 'compile', 'memload'],
+	'video':
+	['none', 'x', 'burn', 'write', 'read', 'compile', 'memload'],
+	'x':
+	['none', 'video', 'burn', 'write', 'read', 'compile', 'memload'],
+	'gaming':
+	['none', 'video', 'x', 'burn', 'write', 'read', 'compile', 'memload']
+	}
+measured = ['latency_ms', 'max_latency_ms']
+
+hdrs = []
+for k,v in tests.items():
+	for test in v:
+		for i in measured:
+			hdrs.append(k + '_' + test + '_' + i)
+		if (k != 'gaming'):
+			hdrs.append(k + '_' + test + '_deadlines_met')
+print(','.join(hdrs))

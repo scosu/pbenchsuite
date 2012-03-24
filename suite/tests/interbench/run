@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+
+import subprocess
+import re
+
+f = open('/proc/cpuinfo', 'r')
+procs = f.read()
+f.close()
+num_procs = 0
+for i in procs.splitlines():
+	if i.startswith('processor'):
+		num_procs += 1
+
+cmd = ['./interbench', '-L', str(num_procs*2), '-c']
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+p.wait()
+data = p.read().decode()
+results = []
+for line in data.splitlines():
+	if line.strip() == '':
+		continue
+	if line.startswith('---'):
+		continue
+	if line.startswith('Load'):
+		continue
+	m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*'
+	if m == None:
+		m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*'
+		if m == None:
+			continue
+		results.append(m.group(1))
+		results.append(m.group(3))
+	else:
+		results.append(m.group(1))
+		results.append(m.group(3))
+		results.append(m.group(5))
+print(','.join(results))
+
