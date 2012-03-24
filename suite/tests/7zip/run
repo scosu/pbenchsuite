@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+
+import time
+import subprocess
+import os
+
+cmd = ['7z', 'a', 'tmp/testfile.7z', 'testfile']
+
+n = open('/dev/null', 'w')
+
+start = time.time()
+p = subprocess.Popen(cmd, stdout=n)
+p.wait()
+end = time.time()
+compress = end - start
+
+os.chdir('tmp')
+
+cmd = ['7z', 'x', 'testfile.7z']
+start = time.time()
+p = subprocess.Popen(cmd, stdout=n)
+p.wait()
+end = time.time()
+decompress = end - start
+
+n.close()
+
+print(str(compress) + ',' + str(decompress))
+
