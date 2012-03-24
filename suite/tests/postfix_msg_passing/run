@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+
+import subprocess
+import time
+
+
+f = open('/proc/cpuinfo', 'r')
+procs = f.read()
+f.close()
+num_procs = 0
+for i in procs.splitlines():
+	if i.startswith('processor'):
+		num_procs += 1
+num_procs *= 4
+
+
+
+def exec_path(execu):
+	p = subprocess.Popen(['whereis', '-b', execu], stdout=subprocess.PIPE)
+	p.wait()
+	return p.stdout.read().decode().split()[1]
+
+n = open('/dev/null', 'w')
+
+server = subprocess.Popen([exec_path('smtp-sink'), '-4', 'localhost:2525', '100'], stdout=n)
+
+cmd = [exec_path('smtp-source')]
+if len(sys.argv) > 1:
+	cmd += sys.argv[1:]
+else:
+	cmd += ['-m', '1000000', '-l', '10240', '-s', str(num_procs)]
+
+start = time.time()
+client = subprocess.Popen(cmd)
+end = time.time()
+print(end - start)
+server.kill()
+
