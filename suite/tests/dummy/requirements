@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# execute requirement checks here, and return the missing requirements by
+# printing the requirements, one per row. If there is nothing printed, the
+# testsuite assumes that all requirements are fullfilled.
