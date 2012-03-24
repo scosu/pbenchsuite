@@ -17,6 +17,8 @@ recording = False
 
 tests = {}
 
+install_state_dir = os.path.join('monitors', '.install_state')
+
 # pseudo classes to create a struct like behavior, see 'parse_testsuite' for members of this classes
 class testsuite:
 	blub = ''
@@ -29,20 +31,51 @@ def vprint(arg):
 		print(arg)
 
 # load all available python files from the monitors directory
-def monitors_load():
+def monitors_load(base, names):
 	global monitors
 	global monitor_data
-	monitor_dir = os.path.join(os.getcwd(), 'monitors')
+	monitor_dir = os.path.join(base, 'monitors')
 	sys.path.insert(0, monitor_dir)
-	vprint("MONITOR: Loading modules")
-	for i in os.listdir(monitor_dir):
-		path = os.path.join(monitor_dir, i)
-		if not os.path.isfile(path) or i[-3:] != '.py':
+	success = True
+	for i in names:
+		mon_file = os.path.join(monitor_dir, i + '.py')
+		if not os.path.isfile(mon_file):
+			success = False
+			print("ERROR: Can't find monitor " + i + ' at ' + mon_file)
 			continue
-		modname = i[:-3]
-		vprint("MONITOR: Detected " + modname)
-		monitors[modname] = __import__(modname)
-		monitor_data[modname] = []
+		monitors[i] = __import__(i)
+		monitor_data[i] = []
+	return success
+
+def monitors_check_requirements():
+	global monitors
+	missing_req = {}
+	for k,v in monitors.items():
+		reqs = v.check_requirements()
+		if len(reqs) != 0:
+			missing_req[k] = reqs
+	return missing_req
+
+def monitors_install(base):
+	global monitors
+	mon_installed = os.path.join(base, install_state_dir)
+	if not os.path.exists(mon_installed):
+		os.makedirs(mon_installed)
+	success = True
+	for k,v in monitors.items():
+		if os.path.exists(os.path.join(mon_installed, k)):
+			vprint('Monitor ' + k + ' already installed, continuing')
+			continue
+		if not v.install():
+			print('ERROR: Failed to install monitor ' + k)
+			success = False
+			continue
+		f = open(os.path.join(mon_installed, k), 'w')
+		f.write(" ")
+		f.close()
+	return success
+
+
 
 def monitors_write_headers(tgtdir):
 	tgtdir = os.path.join(tgtdir, 'monitors')
@@ -113,6 +146,41 @@ def monitors_start():
 	recording = True
 	threading.Thread(target=monitor_process()).start()
 
+
+def tests_check_requirements(suite):
+	reqs = {}
+	for i in suite.tests:
+		if not os.path.isfile(os.path.join(i.directory, 'requirements')):
+			vprint('No requirements file for test ' + i.real_name + ', continuing')
+			continue
+		req_cmd = []
+		req_cmd.append(os.path.join(i.directory, 'requirements'))
+		p = subprocess.Popen(req_cmd, stdout=subprocess.PIPE)
+		p.wait()
+		requirements = p.stdout.read().decode().splitlines()
+		if len(requirements) != 0:
+			reqs[i.real_name] = requirements
+	return reqs
+
+def tests_install(suite):
+	success = True
+	for i in suite.tests:
+		installed = os.path.join(i.directory, '.installed')
+		if os.path.exists(installed):
+			vprint(i.real_name + ' already installed, continuing')
+			continue
+		if not os.path.isfile(os.path.join(i.directory, 'install')):
+			vprint(i.real_name + ' does not have an install script, nothing to install, continuing')
+			continue
+		install_cmd = []
+		install_cmd.append(os.path.join(i.directory, 'install'))
+		p = subprocess.Popen(install_cmd)
+		p.wait()
+		if not os.path.exists(installed):
+			success = False
+			print('ERROR: Installation of test ' + i.real_name + ' failed, no .installed file found at ' + installed)
+	return success
+
 # Run a test and prepend the timestamp to the results. This also starts the monitors.
 def test_run(test, result_path):
 	monitor_dir = os.path.join(result_path, 'monitors')
@@ -149,7 +217,7 @@ def test(test, path):
 		os.mkdir(result_path)
 	max_stderr = 0
 	runs = 0
-	
+
 	f = open(os.path.join(result_path, 'results'), 'w')
 	c = csv.writer(f, delimiter=',')
 	vprint('cd ' + test.directory)
@@ -160,7 +228,7 @@ def test(test, path):
 		p.wait()
 		hdr = p.stdout.read().decode().strip().split(',')
 		c.writerow(['time_s'] + hdr)
-	
+
 	monitor_dir = os.path.join(result_path, 'monitors')
 	if not os.path.exists(monitor_dir):
 		os.mkdir(monitor_dir)
@@ -199,6 +267,31 @@ def test(test, path):
 	vprint('Errors  ' + ', '.join([str(i) for i in result_errors]))
 	return (hdr, result[:], result_errors[:])
 
+def testsuite_check_requirements(suite):
+	missing = {}
+	monitors_missing = monitors_check_requirements()
+	tests_missing = tests_check_requirements(suite)
+	success = True
+	if len(monitors_missing) > 0:
+		success = False
+		for k,v in monitors_missing.items():
+			print("Monitor " + k + " requires not installed packages:")
+			for i in v:
+				print("\t" + i)
+	if len(tests_missing) > 0:
+		success = False
+		for k,v in tests_missing.items():
+			print("Test " + k + " requires not installed packages:")
+			for i in v:
+				print("\t" + i)
+	return success
+
+
+def testsuite_install(base, suite):
+	success_mon = monitors_install(base)
+	success_test = tests_install(suite)
+	return success_mon and success_test
+
 # run all tests defined in a testsuite.
 def testsuite_run(testsuite, runname, path):
 	runpath = os.path.join(os.path.join(path, 'results'), runname)
@@ -225,6 +318,7 @@ def parse_testsuite(tests_path, path):
 	stderr = 5.0
 	suite = testsuite()
 	suite.tests = []
+	suite.monitors = []
 
 	if conf.has_section('general'):
 		if conf.has_option('general', 'min_runs'):
@@ -233,6 +327,8 @@ def parse_testsuite(tests_path, path):
 			max_runs = int(conf.get('general', 'max_runs'))
 		if conf.has_option('general', 'stderr'):
 			stderr = float(conf.get('general', 'stderr'))
+		if conf.has_option('general', 'monitors'):
+			suite.monitors = [i.strip() for i in conf.get('general', 'monitors').split(',')]
 	for section in conf.sections():
 		if section == 'general':
 			continue
@@ -259,6 +355,7 @@ def parse_testsuite(tests_path, path):
 				test.pre_cmd += v.strip().split(',')
 			elif k == 'post_args':
 				test.post_cmd += v.strip().split(',')
+		test.real_name = test.directory[:]
 		test.directory = os.path.join(tests_path, test.directory)
 		settingsdir = os.path.join(test.directory, 'config')
 		# yes, we might read the config file of a test multiple times
@@ -289,9 +386,22 @@ def parse_testsuite(tests_path, path):
 if len(sys.argv) < 3:
 	print("USAGE: <TESTSUITE> <RUNNAME>")
 	sys.exit(1)
-monitors_load()
 base = os.getcwd()
 suites = os.path.join(base, 'testsuites')
 testsuitepath = os.path.join(suites, sys.argv[1])
 suite = parse_testsuite(os.path.join(base, 'tests'), testsuitepath)
+
+a = monitors_load(base, suite.monitors)
+if not a:
+	sys.exit(-1)
+
+a = testsuite_check_requirements(suite)
+if not a:
+	print("Aborting now, please install the missing requirements")
+	sys.exit(1)
+
+a = testsuite_install(base, suite)
+if not a:
+	print('ERROR: some installation failed, aborting')
+	sys.exit(1)
 testsuite_run(suite, sys.argv[2], base)
