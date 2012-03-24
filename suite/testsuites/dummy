@@ -13,6 +13,9 @@ max_runs = 10
 # enough and the minimum runs are done, ptestsuite continues with the next test.
 stderr = 0.01
 
+# Define the monitors that should run for this testsuite.(without .py at the end)
+monitors = mon_memory, mon_schedstat, mon_stat
+
 # After this general section the tests are following. The tests are executed in
 # the order defined in this configuration file. The section name is the name
 # for the result directory.
