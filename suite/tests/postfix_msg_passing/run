@@ -30,6 +30,7 @@ if len(sys.argv) > 1:
 	cmd += sys.argv[1:]
 else:
 	cmd += ['-m', '1000000', '-l', '10240', '-s', str(num_procs)]
+cmd.append('-4')
 cmd.append('localhost:2525')
 start = time.time()
 client = subprocess.Popen(cmd)
