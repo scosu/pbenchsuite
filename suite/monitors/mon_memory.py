@@ -1,5 +1,14 @@
 #!/usr/bin/python3
 import re
+import os
+
+def check_requirements():
+	if not os.path.isfile('/proc/meminfo'):
+		return ['/proc/meminfo']
+	return []
+
+def install():
+	return True
 
 def pre():
 	return

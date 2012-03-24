@@ -2,6 +2,13 @@
 
 init = None
 
+def check_requirements():
+	if not os.path.isfile('/proc/stat'):
+		return ['/proc/stat']
+	return []
+def install():
+	return True
+
 def collect_data(cumulative_only=False):
 	f = open('/proc/stat', 'r')
 	lines = f.read().splitlines()

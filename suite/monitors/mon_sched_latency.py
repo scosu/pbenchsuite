@@ -2,6 +2,10 @@
 
 import time
 
+def check_requirements():
+	return []
+def install():
+	return True
 def pre():
 	return
 

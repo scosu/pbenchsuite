@@ -2,6 +2,14 @@
 
 init = None
 
+def check_requirements():
+	if not os.path.isfile('/proc/schedstat'):
+		print("ERROR: can't find /proc/schedstat, please use a kernel with scheduer statistics support")
+		return ['/proc/schedstat']
+	return []
+def install():
+	return True
+
 def collect_data():
 	results = None
 	f = open('/proc/schedstat', 'r')
