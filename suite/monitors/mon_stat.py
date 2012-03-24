@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import os
+
 init = None
 
 def check_requirements():
