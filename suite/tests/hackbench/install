@@ -1,0 +1,4 @@
+#!/bin/bash
+
+wget http://people.redhat.com/mingo/cfs-scheduler/tools/hackbench.c
+gcc -o hackbench hackbench.c -lpthread
