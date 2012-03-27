@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+
+import os
+import subprocess
+
+os.chdir('nbench')
+cmd = ['./nbench']
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+p.wait()
+
+
+try_match = 0
+results = []
+for i in p.stdout.read().decode().splitlines():
+	if try_match == 0:
+		if i.startswith('--------------'):
+			try_match = 1
+		continue
+	if i.startswith('================'):
+		break
+	fields = [n.strip() for n in i.split(':')]
+	results.append(fields[1])
+print(','.join(results))

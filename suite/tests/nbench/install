@@ -1,0 +1,7 @@
+#!/bin/bash
+wget http://www.tux.org/~mayer/linux/nbench-byte-2.2.3.tar.gz -O nbench-byte-2.2.3.tar.gz
+tar -xf nbench-byte-2.2.3.tar.gz
+mv nbench-byte-2.2.3 nbench
+cd nbench
+make
+
