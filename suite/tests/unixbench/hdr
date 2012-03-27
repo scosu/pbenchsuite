@@ -1,0 +1,40 @@
+#!/usr/bin/python3
+
+import subprocess
+import sys
+import re
+import os
+
+f = open('/proc/cpuinfo', 'r')
+procs = f.read()
+f.close()
+num_procs = 0
+for i in procs.splitlines():
+	if i.startswith('processor'):
+		num_procs += 1
+
+if len(sys.argv) != 3:
+	print("USAGE: " + sys.argv[0] + " <single|parallel> <UNIXBENCHTEST>")
+	sys.exit(1)
+
+cmd = ['./Run', '-i', '1', '-c', '1']
+
+cmd.append(sys.argv[2])
+os.chdir('UnixBench')
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+p.wait()
+
+try_match = 0
+results = []
+num = 0
+for i in p.stdout.read().decode().splitlines():
+	if try_match == 0:
+		if i.startswith('Benchmark Run'):
+			try_match = 1
+		continue
+
+	m = re.match('.*\s+\d+\.?\d*\s+(\w+)\s+\(.*', i)
+	if m != None:
+		results.append(sys.argv[2] + str(num) + "_" + m.group(1))
+		num += 1
+print(','.join(results))
