@@ -11,7 +11,7 @@ num_procs = 0
 for i in procs.splitlines():
 	if i.startswith('processor'):
 		num_procs += 1
-num_procs *= 5
+num_procs *= 2
 
 cmd = ['./yield']
 if len(sys.argv) > 1:

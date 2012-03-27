@@ -14,7 +14,7 @@ for i in procs.splitlines():
 cmd = ['./interbench', '-L', str(num_procs*2), '-c']
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 p.wait()
-data = p.read().decode()
+data = p.stdout.read().decode()
 results = []
 for line in data.splitlines():
 	if line.strip() == '':
@@ -23,9 +23,9 @@ for line in data.splitlines():
 		continue
 	if line.startswith('Load'):
 		continue
-	m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*'
+	m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*')
 	if m == None:
-		m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*'
+		m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*')
 		if m == None:
 			continue
 		results.append(m.group(1))
