@@ -296,7 +296,7 @@ def testsuite_install(base, suite):
 def testsuite_run(testsuite, runname, path):
 	runpath = os.path.join(os.path.join(path, 'results'), runname)
 	if not os.path.exists(runpath):
-		os.mkdir(runpath)
+		os.mkdirs(runpath)
 	summarypath = os.path.join(runpath, 'summary')
 	c = csv.writer(open(summarypath, 'a'), delimiter=',')
 	for i in testsuite.tests:
