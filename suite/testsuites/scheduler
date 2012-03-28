@@ -1,0 +1,186 @@
+[general]
+min_runs = 4
+max_runs = 30
+stderr = 0.001
+
+[hackbench_10]
+test = hackbench
+args = 10
+[hackbench_20]
+test = hackbench
+args = 20
+[hackbench_30]
+test = hackbench
+args = 30
+[hackbench_40]
+test = hackbench
+args = 40
+[hackbench_50]
+test = hackbench
+args = 50
+[hackbench_75]
+test = hackbench
+args = 75
+[hackbench_100]
+test = hackbench
+args = 100
+[hackbench_150]
+test = hackbench
+args = 150
+[hackbench_200]
+test = hackbench
+args = 200
+[hackbench_250]
+test = hackbench
+args = 250
+[hackbench_300]
+test = hackbench
+args = 300
+[hackbench_350]
+test = hackbench
+args = 350
+[hackbench_400]
+test = hackbench
+args = 400
+
+
+[7zip]
+
+[bzip2]
+
+[gzip]
+
+[interbench]
+
+[kernel_compile]
+
+[massive_intr]
+
+[nbench]
+
+[pipe_test]
+
+[postfix_msg_passing]
+
+[unixbench_dhry2reg]
+test = unixbench
+args = parallel,dhry2reg
+
+[unixbench_whetstone]
+test = unixbench
+args = parallel,whetstone-double
+
+[unixbench_syscall]
+test = unixbench
+args = parallel,syscall
+
+[unixbench_pipe]
+test = unixbench
+args = parallel,pipe
+
+[unixbench_context1]
+test = unixbench
+args = parallel,context1
+
+[unixbench_spawn]
+test = unixbench
+args = parallel,spawn
+
+[unixbench_execl]
+test = unixbench
+args = parallel,execl
+
+[unixbench_fstime-w]
+test = unixbench
+args = parallel,fstime-w
+
+[unixbench_fstime-r]
+test = unixbench
+args = parallel,fstime-r
+
+[unixbench_fstime]
+test = unixbench
+args = parallel,fstime
+
+[unixbench_fsbuffer-w]
+test = unixbench
+args = parallel,fsbuffer-w
+
+[unixbench_fsbuffer-r]
+test = unixbench
+args = parallel,fsbuffer-r
+
+[unixbench_fsbuffer]
+test = unixbench
+args = parallel,fsbuffer
+
+[unixbench_fsdisk-w]
+test = unixbench
+args = parallel,fsdisk-w
+
+[unixbench_fsdisk-r]
+test = unixbench
+args = parallel,fsdisk-r
+
+[unixbench_fsdisk]
+test = unixbench
+args = parallel,fsdisk
+
+[unixbench_shell1]
+test = unixbench
+args = parallel,shell1
+
+[unixbench_shell8]
+test = unixbench
+args = parallel,shell8
+
+[unixbench_shell16]
+test = unixbench
+args = parallel,shell16
+
+[unixbench_c]
+test = unixbench
+args = parallel,C
+
+[unixbench_arithoh]
+test = unixbench
+args = parallel,arithoh
+
+[unixbench_short]
+test = unixbench
+args = parallel,short
+
+[unixbench_int]
+test = unixbench
+args = parallel,int
+
+[unixbench_long]
+test = unixbench
+args = parallel,long
+
+[unixbench_float]
+test = unixbench
+args = parallel,float
+
+[unixbench_double]
+test = unixbench
+args = parallel,double
+
+[unixbench_dc]
+test = unixbench
+args = parallel,dc
+
+[unixbench_hanoi]
+test = unixbench
+args = parallel,hanoi
+
+[unixbench_grep]
+test = unixbench
+args = parallel,grep
+
+[unixbench_sysexec]
+test = unixbench
+args = parallel,sysexec
+
+[yield_benchmark]
+
