@@ -23,9 +23,9 @@ for line in data.splitlines():
 		continue
 	if line.startswith('Load'):
 		continue
-	m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*')
+	m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*', line)
 	if m == None:
-		m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*')
+		m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*', line)
 		if m == None:
 			continue
 		results.append(m.group(1))
