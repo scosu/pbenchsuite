@@ -313,6 +313,9 @@ def testsuite_run(testsuite, runname, path):
 
 # parse a testsuite configuration file.
 def parse_testsuite(tests_path, path):
+	if not os.path.isfile(path):
+		print("ERROR: Can't find config " + path)
+		sys.exit(1)
 	conf = configparser.RawConfigParser()
 	conf.read(path)
 	vprint("Parsing testsuite config " + path)
