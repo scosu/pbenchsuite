@@ -315,13 +315,13 @@ def testsuite_run(testsuite, runname, path):
 def parse_testsuite(tests_path, path):
 	conf = configparser.RawConfigParser()
 	conf.read(path)
+	vprint("Parsing testsuite config " + path)
 	min_runs = 3
 	max_runs = 10
 	stderr = 5.0
 	suite = testsuite()
 	suite.tests = []
 	suite.monitors = []
-	vprint("Parsing testsuite config")
 	if conf.has_section('general'):
 		if conf.has_option('general', 'min_runs'):
 			min_runs = int(conf.get('general', 'min_runs'))
