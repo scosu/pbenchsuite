@@ -166,6 +166,7 @@ def tests_install(suite):
 	success = True
 	for i in suite.tests:
 		installed = os.path.join(i.directory, '.installed')
+		os.chdir(i.directory)
 		if os.path.exists(installed):
 			vprint(i.real_name + ' already installed, continuing')
 			continue
