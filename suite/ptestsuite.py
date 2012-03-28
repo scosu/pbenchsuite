@@ -299,6 +299,7 @@ def testsuite_run(testsuite, runname, path):
 		os.makedirs(runpath)
 	summarypath = os.path.join(runpath, 'summary')
 	c = csv.writer(open(summarypath, 'a'), delimiter=',')
+	vprint("Starting tests for testsuite")
 	for i in testsuite.tests:
 		hdr, result, resulte = test(i, runpath)
 		hdr = ['name'] + hdr
@@ -307,6 +308,7 @@ def testsuite_run(testsuite, runname, path):
 		for n in range(0, len(result)):
 			row.append(result[n])
 			row.append(resulte[n])
+		vprint("writing results to summary")
 		c.writerow(row)
 
 # parse a testsuite configuration file.
@@ -319,7 +321,7 @@ def parse_testsuite(tests_path, path):
 	suite = testsuite()
 	suite.tests = []
 	suite.monitors = []
-
+	vprint("Parsing testsuite config")
 	if conf.has_section('general'):
 		if conf.has_option('general', 'min_runs'):
 			min_runs = int(conf.get('general', 'min_runs'))
@@ -330,6 +332,7 @@ def parse_testsuite(tests_path, path):
 		if conf.has_option('general', 'monitors'):
 			suite.monitors = [i.strip() for i in conf.get('general', 'monitors').split(',')]
 	for section in conf.sections():
+		vprint("Parsing section " + section)
 		if section == 'general':
 			continue
 		test = testprofile()
@@ -380,8 +383,10 @@ def parse_testsuite(tests_path, path):
 		test.hdr_cmd += test.cmd[1:]
 		if test.min_runs > test.max_runs:
 			test.min_runs = test.max_runs
+		vprint("Parsed test " + test.name)
+		vprint(test)
 		suite.tests.append(test)
-
+	vprint("Parsing done")
 	return suite
 if len(sys.argv) < 3:
 	print("USAGE: <TESTSUITE> <RUNNAME>")
