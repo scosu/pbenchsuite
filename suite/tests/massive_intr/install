@@ -2,3 +2,7 @@
 
 wget -O massive_intr.c http://people.redhat.com/mingo/cfs-scheduler/tools/massive_intr.c
 gcc -o massive_intr massive_intr.c -lrt
+if [ $? -eq 0 ]
+then
+	touch .installed
+fi

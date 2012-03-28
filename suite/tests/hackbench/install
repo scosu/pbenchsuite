@@ -1,4 +1,5 @@
 #!/bin/bash
 
-wget http://people.redhat.com/mingo/cfs-scheduler/tools/hackbench.c
+wget http://people.redhat.com/mingo/cfs-scheduler/tools/hackbench.c -O hackbench.c
 gcc -o hackbench hackbench.c -lpthread
+touch .installed

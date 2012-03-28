@@ -5,3 +5,8 @@ mv nbench-byte-2.2.3 nbench
 cd nbench
 make
 
+if [ $? -eq 0 ]
+then
+	touch ../.installed
+fi
+
