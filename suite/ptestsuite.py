@@ -393,6 +393,7 @@ suite = parse_testsuite(os.path.join(base, 'tests'), testsuitepath)
 
 a = monitors_load(base, suite.monitors)
 if not a:
+	print("Aborting, problem on loading a monitor")
 	sys.exit(-1)
 
 a = testsuite_check_requirements(suite)
