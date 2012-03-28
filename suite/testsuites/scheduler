@@ -2,6 +2,7 @@
 min_runs = 4
 max_runs = 30
 stderr = 0.001
+monitors = mon_memory,mon_sched_latency,mon_schedstat,mon_stat
 
 [hackbench_10]
 test = hackbench
