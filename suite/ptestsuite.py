@@ -166,15 +166,16 @@ def tests_install(suite):
 	success = True
 	for i in suite.tests:
 		installed = os.path.join(i.directory, '.installed')
-		os.chdir(i.directory)
 		if os.path.exists(installed):
 			vprint(i.real_name + ' already installed, continuing')
 			continue
 		if not os.path.isfile(os.path.join(i.directory, 'install')):
 			vprint(i.real_name + ' does not have an install script, nothing to install, continuing')
 			continue
+		os.chdir(i.directory)
 		install_cmd = []
 		install_cmd.append(os.path.join(i.directory, 'install'))
+		vprint("Installing test " + i.real_name)
 		p = subprocess.Popen(install_cmd)
 		p.wait()
 		if not os.path.exists(installed):
