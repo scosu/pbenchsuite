@@ -392,7 +392,7 @@ def parse_testsuite(tests_path, path):
 			for k,v in conf.items('general'):
 				if k == 'min_runs':
 					test.min_runs = max(test.min_runs, int(v))
-				elif k == 'warmup_runs' && test.warmup_runs == -1:
+				elif k == 'warmup_runs' and test.warmup_runs == -1:
 					test.warmup_runs = int(v)
 				elif k == 'pre_args':
 					if len(test.pre_cmd) == 1:
