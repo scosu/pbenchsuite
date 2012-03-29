@@ -11,6 +11,11 @@ max_runs = 10
 # 2) testsuite config global
 # 3) test config
 warmup_runs = 2
+
+# min_runtime and max_runtime define the minimum and maximum runtime for repeated
+# runs of a test. Unit is seconds.
+max_runtime = 3600
+min_runtime = 300
 # stderr is multiplied with the average result to get the maximal allowed
 # standard error.
 # Example:
@@ -49,6 +54,9 @@ args = +%s
 # A setting in this file will override a warmup setting in the test config.
 # Default is 1
 warmup_runs = 2
+
+min_runtime = 50
+max_runtime = 600
 
 [dummytest2]
 test = dummy

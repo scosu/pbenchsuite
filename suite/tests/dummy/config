@@ -7,3 +7,5 @@ pre_args = -p,42,23
 args = +%s
 post_args = -x,d
 warmup_runs = 3
+max_runtime = 500
+min_runtime = 60

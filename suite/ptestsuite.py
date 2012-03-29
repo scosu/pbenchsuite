@@ -244,6 +244,7 @@ def test(test, path):
 	for i in range(0, test.warmup_runs):
 		vprint("Warmup run " + str(i + 1))
 		test_warmup(test)
+	testsuite_starttime = time.time()
 	while True:
 		starttime, run = test_run(test, result_path)
 		values.append(run)
@@ -258,7 +259,11 @@ def test(test, path):
 		c.writerow([starttime] + run)
 		if runs < test.min_runs:
 			continue
-		if runs > test.max_runs:
+		if test.min_runtime > time.time() - testsuite_starttime:
+			continue
+		if runs > test.max_runs and test.max_runs != -1:
+			break
+		if test.max_runtime != -1 and test.max_runtime < time.time() - testsuite_starttime:
 			break
 		errors_ok = True
 		for i in value_lines:
@@ -330,8 +335,10 @@ def parse_testsuite(tests_path, path):
 	conf = configparser.RawConfigParser()
 	conf.read(path)
 	vprint("Parsing testsuite config " + path)
-	min_runs = 3
-	max_runs = 10
+	min_runs = 2
+	max_runs = -1
+	min_runtime = 0
+	max_runtime = -1
 	warmup_runs = -1
 	stderr = 5.0
 	suite = testsuite()
@@ -344,6 +351,10 @@ def parse_testsuite(tests_path, path):
 			max_runs = int(conf.get('general', 'max_runs'))
 		if conf.has_option('general', 'warmup_runs'):
 			warmup_runs = int(conf.get('general', 'warmup_runs'))
+		if conf.has_option('general', 'min_runtime'):
+			min_runtime = int(conf.get('general', 'min_runtime'))
+		if conf.has_option('general', 'max_runtime'):
+			max_runtime = int(conf.get('general', 'max_runtime'))
 		if conf.has_option('general', 'stderr'):
 			stderr = float(conf.get('general', 'stderr'))
 		if conf.has_option('general', 'monitors'):
@@ -355,6 +366,8 @@ def parse_testsuite(tests_path, path):
 		test = testprofile()
 		test.min_runs = min_runs
 		test.max_runs = max_runs
+		test.min_runtime = min_runtime
+		test.max_runtime = max_runtime
 		test.stderr = stderr
 		test.name = section[:]
 		test.cmd = ['./run']
@@ -367,7 +380,10 @@ def parse_testsuite(tests_path, path):
 			if k == 'min_runs':
 				test.min_runs = max(test.min_runs, int(v))
 			elif k == 'max_runs':
-				test.max_runs = min(test.max_runs, int(v))
+				if test.max_runs == -1:
+					test.max_runs = int(v)
+				else:
+					test.max_runs = min(test.max_runs, int(v))
 			elif k == 'warmup_runs':
 				test.warmup_runs = max(test.warmup_runs, int(v))
 			elif k == 'test':
@@ -378,6 +394,13 @@ def parse_testsuite(tests_path, path):
 				test.pre_cmd += v.strip().split(',')
 			elif k == 'post_args':
 				test.post_cmd += v.strip().split(',')
+			elif k == 'max_runtime':
+				if test.max_runtime == -1:
+					test.max_runtime = int(v)
+				else:
+					test.max_runtime = min(test.max_runtime, int(v))
+			elif k == 'min_runtime':
+				test.min_runtime = max(test.min_runtime, int(v))
 		if test.warmup_runs == -1:
 			test.warmup_runs = warmup_runs
 
@@ -406,7 +429,17 @@ def parse_testsuite(tests_path, path):
 					if len(test.cmd) == 1:
 						test.cmd += v.strip().split(',')
 				elif k == 'max_runs':
-					test.max_runs = min(test.max_runs, int(v))
+					if test.max_runs == -1:
+						test.max_runs = int(v)
+					else:
+						test.max_runs = min(test.max_runs, int(v))
+				elif k == 'max_runtime':
+					if test.max_runtime == -1:
+						test.max_runtime = int(v)
+					else:
+						test.max_runtime = min(test.max_runtime, int(v))
+				elif k == 'min_runtime':
+					test.min_runtime = max(test.min_runtime, int(v))
 		if test.warmup_runs == -1:
 			test.warmup_runs = 1
 		test.hdr_cmd += test.cmd[1:]
