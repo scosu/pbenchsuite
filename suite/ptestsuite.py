@@ -316,7 +316,38 @@ def testsuite_run(testsuite, runname, path):
 	summarypath = os.path.join(runpath, 'summary')
 	c = csv.writer(open(summarypath, 'a'), delimiter=',')
 	vprint("Starting tests for testsuite")
+	remaining_min = 0
+	remaining_max = 0
 	for i in testsuite.tests:
+		remaining_min += i.min_runtime
+		if i.max_runtime == -1:
+			remaining_max += 2 * i.min_runtime
+		else:
+			remaining_max += i.max_runtime
+	if remaining_min == 0:
+		remaining_min = -1
+	if remaining_max == 0:
+		remaining_max = -1
+	ct = 0
+	started_running = time.time()
+	for i in testsuite.tests:
+		vprint("Running Test " + str(ct + 1) + "/" + str(len(testsuite.tests)))
+		if remaining_min != -1:
+			vprint("Estimated minimal remaining runtime: "
+				+ time.strftime('%H:%M:%S', time.gmtime(remaining_min)))
+			vprint("Estimated minimal finishing date: "
+				+ time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time() + remaining_min)))
+			remaining_min -= i.min_runtime
+		if remaining_max != -1:
+			vprint("Estimated maximal remaining runtime: "
+				+ time.strftime('%H:%M:%S', time.gmtime(remaining_max)))
+			vprint("Estimated maximal finishing date: "
+				+ time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time() + remaining_max)))
+			if i.max_runtime == -1:
+				remaining_max -= 2 * i.min_runtime
+			else:
+				remaining_max -= i.max_runtime
+
 		hdr, result, resulte = test(i, runpath)
 		hdr = ['name'] + hdr
 		c.writerow(hdr)
@@ -326,6 +357,7 @@ def testsuite_run(testsuite, runname, path):
 			row.append(resulte[n])
 		vprint("writing results to summary")
 		c.writerow(row)
+		ct += 1
 
 # parse a testsuite configuration file.
 def parse_testsuite(tests_path, path):
