@@ -259,12 +259,12 @@ def test(test, path):
 		c.writerow([starttime] + run)
 		if runs < test.min_runs:
 			continue
-		if test.min_runtime > time.time() - testsuite_starttime:
-			continue
 		if runs > test.max_runs and test.max_runs != -1:
 			break
 		if test.max_runtime != -1 and test.max_runtime < time.time() - testsuite_starttime:
 			break
+		if test.min_runtime > time.time() - testsuite_starttime:
+			continue
 		errors_ok = True
 		for i in value_lines:
 			mean = sum(i) / float(len(i))
