@@ -383,13 +383,14 @@ def parse_testsuite(tests_path, path):
 
 		test.real_name = test.directory[:]
 		test.directory = os.path.join(tests_path, test.directory)
-		settingsdir = os.path.join(test.directory, 'config')
+		settingsfile = os.path.join(test.directory, 'config')
 		# yes, we might read the config file of a test multiple times
 		# but this is no performance critical part
-		if os.path.exists(settingsdir):
+		if os.path.exists(settingsfile):
 			settings = configparser.RawConfigParser()
-			settings.read(settingsdir)
-			for k,v in conf.items('general'):
+			vprint("Parsing test config " + settingsfile)
+			settings.read(settingsfile)
+			for k,v in settings.items('general'):
 				if k == 'min_runs':
 					test.min_runs = max(test.min_runs, int(v))
 				elif k == 'warmup_runs' and test.warmup_runs == -1:
