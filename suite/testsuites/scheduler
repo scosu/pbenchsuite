@@ -1,7 +1,10 @@
 [general]
 warmup_runs = 1
 min_runs = 3
-min_runtime = 600
+max_runs = 30
+# 7 minutes minimum runtime per test
+min_runtime = 420
+# 30 minutes maximum runtime per test
 max_runtime = 1800
 stderr = 0.001
 monitors = mon_memory,mon_sched_latency,mon_schedstat,mon_stat
