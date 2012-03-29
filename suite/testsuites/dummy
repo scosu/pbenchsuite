@@ -5,6 +5,12 @@
 min_runs = 6
 # max_runs defines the maximum runs per test
 max_runs = 10
+# warmup runs to heat up the caches before running the test. Default: 1
+# Priority of warmup_runs definitions:
+# 1) testsuite config test specific
+# 2) testsuite config global
+# 3) test config
+warmup_runs = 2
 # stderr is multiplied with the average result to get the maximal allowed
 # standard error.
 # Example:
@@ -37,6 +43,12 @@ args = +%s
 #min_runs = 10
 # Maximum runs
 #max_runs = 42
+
+# Warmup runs. Useful to measure only hot cache tests. Warmup runs do not
+# produce any data.
+# A setting in this file will override a warmup setting in the test config.
+# Default is 1
+warmup_runs = 2
 
 [dummytest2]
 test = dummy

@@ -1,6 +1,9 @@
 [general]
+# Most of those options are self explaining or documented in the example
+# testsuite config
 min_runs = 4
 max_runs = 5
 pre_args = -p,42,23
 args = +%s
 post_args = -x,d
+warmup_runs = 3

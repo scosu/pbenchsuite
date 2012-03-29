@@ -183,6 +183,10 @@ def tests_install(suite):
 			print('ERROR: Installation of test ' + i.real_name + ' failed, no .installed file found at ' + installed)
 	return success
 
+def test_warmup(test):
+	p = subprocess.Popen(test.cmd[:], stdout=subprocess.PIPE)
+	p.wait()
+
 # Run a test and prepend the timestamp to the results. This also starts the monitors.
 def test_run(test, result_path):
 	monitor_dir = os.path.join(result_path, 'monitors')
@@ -209,7 +213,7 @@ def calc_stderr(values):
 # or the number of runs exceed max_runs. The test runs at least min_runs times.
 def test(test, path):
 	vprint('')
-	vprint('Test ' + test.name + ' min_runs ' + str(test.min_runs) + ' max_runs ' + str(test.max_runs) + ' max_err ' + str(test.stderr))
+	vprint('Test ' + test.name + ' warmup_runs ' + str(test.warmup_runs) + ' min_runs ' + str(test.min_runs) + ' max_runs ' + str(test.max_runs) + ' max_err ' + str(test.stderr))
 	vprint('Cmd: ' + ' '.join(test.cmd))
 #perhaps read the old values before to continue calculation
 	values = []
@@ -226,6 +230,7 @@ def test(test, path):
 	os.chdir(test.directory)
 	hdr = None
 	if os.path.exists(test.hdr_cmd[0]):
+		vprint("Creating csv header")
 		p = subprocess.Popen(test.hdr_cmd[:], stdout=subprocess.PIPE)
 		p.wait()
 		hdr = p.stdout.read().decode().strip().split(',')
@@ -235,6 +240,9 @@ def test(test, path):
 	if not os.path.exists(monitor_dir):
 		os.mkdir(monitor_dir)
 	monitors_write_headers(result_path)
+	for i in range(0, test.warmup_runs):
+		vprint("Warmup run " + str(i + 1))
+		test_warmup(test)
 	while True:
 		starttime, run = test_run(test, result_path)
 		values.append(run)
@@ -323,6 +331,7 @@ def parse_testsuite(tests_path, path):
 	vprint("Parsing testsuite config " + path)
 	min_runs = 3
 	max_runs = 10
+	warmup_runs = -1
 	stderr = 5.0
 	suite = testsuite()
 	suite.tests = []
@@ -332,6 +341,8 @@ def parse_testsuite(tests_path, path):
 			min_runs = int(conf.get('general', 'min_runs'))
 		if conf.has_option('general', 'max_runs'):
 			max_runs = int(conf.get('general', 'max_runs'))
+		if conf.has_option('general', 'warmup_runs'):
+			warmup_runs = int(conf.get('general', 'warmup_runs'))
 		if conf.has_option('general', 'stderr'):
 			stderr = float(conf.get('general', 'stderr'))
 		if conf.has_option('general', 'monitors'):
@@ -350,11 +361,14 @@ def parse_testsuite(tests_path, path):
 		test.post_cmd = ['./post']
 		test.hdr_cmd = ['./hdr']
 		test.directory = test.name
+		test.warmup_runs = -1
 		for k,v in conf.items(section):
 			if k == 'min_runs':
 				test.min_runs = max(test.min_runs, int(v))
 			elif k == 'max_runs':
 				test.max_runs = min(test.max_runs, int(v))
+			elif k == 'warmup_runs':
+				test.warmup_runs = max(test.warmup_runs, int(v))
 			elif k == 'test':
 				test.directory = v
 			elif k == 'args':
@@ -363,6 +377,10 @@ def parse_testsuite(tests_path, path):
 				test.pre_cmd += v.strip().split(',')
 			elif k == 'post_args':
 				test.post_cmd += v.strip().split(',')
+		if test.warmup_runs == -1:
+			test.warmup_runs = warmup_runs
+
+
 		test.real_name = test.directory[:]
 		test.directory = os.path.join(tests_path, test.directory)
 		settingsdir = os.path.join(test.directory, 'config')
@@ -374,6 +392,8 @@ def parse_testsuite(tests_path, path):
 			for k,v in conf.items('general'):
 				if k == 'min_runs':
 					test.min_runs = max(test.min_runs, int(v))
+				elif k == 'warmup_runs' && test.warmup_runs == -1:
+					test.warmup_runs = int(v)
 				elif k == 'pre_args':
 					if len(test.pre_cmd) == 1:
 						test.pre_cmd += v.strip().split(',')
@@ -385,6 +405,8 @@ def parse_testsuite(tests_path, path):
 						test.cmd += v.strip().split(',')
 				elif k == 'max_runs':
 					test.max_runs = min(test.max_runs, int(v))
+		if test.warmup_runs == -1:
+			test.warmup_runs = 1
 		test.hdr_cmd += test.cmd[1:]
 		if test.min_runs > test.max_runs:
 			test.min_runs = test.max_runs
