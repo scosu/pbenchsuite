@@ -10,6 +10,7 @@ import math
 import threading
 import configparser
 import subprocess
+import signal
 
 monitors = {}
 monitor_data = {}
@@ -419,6 +420,16 @@ def parse_testsuite(tests_path, path):
 if len(sys.argv) < 3:
 	print("USAGE: <TESTSUITE> <RUNNAME>")
 	sys.exit(1)
+
+# Some of the tests are using SIGUSR1 and SIGUSR2 for communication. To prevent
+# this script from exiting, handle them with a dummy function
+def sig_dummy(x, y):
+	return
+signal.signal(signal.SIGUSR1, sig_dummy)
+signal.signal(signal.SIGUSR2, sig_dummy)
+
+
+
 base = os.getcwd()
 suites = os.path.join(base, 'testsuites')
 testsuitepath = os.path.join(suites, sys.argv[1])
