@@ -58,7 +58,33 @@ args = 400
 
 [interbench]
 
-[kernel_compile]
+[kernel1]
+test = kernel_compile
+args = -j,1
+[kernel2]
+test = kernel_compile
+args = -j,2
+[kernel4]
+test = kernel_compile
+args = -j,4
+[kernel8]
+test = kernel_compile
+args = -j,8
+[kernel16]
+test = kernel_compile
+args = -j,16
+[kernel32]
+test = kernel_compile
+args = -j,32
+[kernel64]
+test = kernel_compile
+args = -j,64
+[kernel128]
+test = kernel_compile
+args = -j,128
+[kernel264]
+test = kernel_compile
+args = -j,264
 
 [massive_intr]
 
