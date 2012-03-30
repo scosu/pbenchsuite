@@ -148,10 +148,6 @@ args = parallel,shell16
 test = unixbench
 args = parallel,C
 
-[unixbench_arithoh]
-test = unixbench
-args = parallel,arithoh
-
 [unixbench_short]
 test = unixbench
 args = parallel,short
