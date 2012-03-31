@@ -11,6 +11,7 @@ import threading
 import configparser
 import subprocess
 import signal
+import shutil
 
 monitors = {}
 monitor_data = {}
@@ -146,6 +147,58 @@ def monitors_start():
 	global recording
 	recording = True
 	threading.Thread(target=monitor_process()).start()
+
+def store_system_information(result_path):
+	sysinfo_dir = os.path.join(result_path, 'sysinfo')
+	os.makedirs(sysinfo_dir)
+
+	if os.path.exists('/proc/cpuinfo'):
+		# cpuinfo
+		shutil.copyfile('/proc/cpuinfo', os.path.join(sysinfo_dir, 'cpuinfo'))
+
+	if os.path.exists('/etc/issue'):
+		shutil.copyfile('/etc/issue', os.path.join(sysinfo_dir, 'distribution'))
+
+	i = 0
+	fout = open(os.path.join(sysinfo_dir, 'cpufreq'), 'w')
+	while True:
+		if not os.path.isdir('/sys/devices/system/cpu/cpu' + str(i)):
+			break
+		fin = open('/sys/devices/system/cpu/cpu' + str(i) + '/cpufreq/scaling_max_freq', 'r')
+		fout.write(str(i) + ':max:' + fin.read().strip() + "\n")
+		fin.close()
+
+		fin = open('/sys/devices/system/cpu/cpu' + str(i) + '/cpufreq/scaling_min_freq', 'r')
+		fout.write(str(i) + ':min:' + fin.read().strip() + "\n")
+		fin.close()
+
+		fin = open('/sys/devices/system/cpu/cpu' + str(i) + '/cpufreq/scaling_cur_freq', 'r')
+		fout.write(str(i) + ':cur:' + fin.read().strip() + "\n")
+		fin.close()
+
+		fin = open('/sys/devices/system/cpu/cpu' + str(i) + '/cpufreq/scaling_governor', 'r')
+		fout.write(str(i) + ':gover:' + fin.read().strip() + "\n")
+		fin.close()
+
+		i += 1
+
+	fout.close()
+
+
+	fout = open(os.path.join(sysinfo_dir, 'modules'), 'w')
+	p = subprocess.Popen(['lsmod'], stdout = fout)
+	p.wait()
+	fout.close()
+
+	fout = open(os.path.join(sysinfo_dir, 'mount'), 'w')
+	p = subprocess.Popen(['mount'], stdout = fout)
+	p.wait()
+	fout.close()
+
+	fout = open(os.path.join(sysinfo_dir, 'kernel'), 'w')
+	p = subprocess.Popen(['uname', '-a'], stdout = fout)
+	p.wait()
+	fout.close()
 
 
 def tests_check_requirements(suite):
@@ -313,6 +366,7 @@ def testsuite_run(testsuite, runname, path):
 	runpath = os.path.join(os.path.join(path, 'results'), runname)
 	if not os.path.exists(runpath):
 		os.makedirs(runpath)
+	store_system_information(runpath)
 	summarypath = os.path.join(runpath, 'summary')
 	c = csv.writer(open(summarypath, 'a'), delimiter=',')
 	vprint("Starting tests for testsuite")
