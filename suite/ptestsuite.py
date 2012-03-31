@@ -364,8 +364,11 @@ def testsuite_install(base, suite):
 # run all tests defined in a testsuite.
 def testsuite_run(testsuite, runname, path):
 	runpath = os.path.join(os.path.join(path, 'results'), runname)
+	testresultpath = os.path.join(runpath, 'tests')
 	if not os.path.exists(runpath):
 		os.makedirs(runpath)
+	if not os.path.exists(testresultpath):
+		os.makedirs(testresultpath)
 	store_system_information(runpath)
 	summarypath = os.path.join(runpath, 'summary')
 	c = csv.writer(open(summarypath, 'a'), delimiter=',')
@@ -402,7 +405,7 @@ def testsuite_run(testsuite, runname, path):
 			else:
 				remaining_max -= i.max_runtime
 
-		hdr, result, resulte = test(i, runpath)
+		hdr, result, resulte = test(i, testresultpath)
 		hdr = ['name'] + hdr
 		c.writerow(hdr)
 		row = [i.name]
