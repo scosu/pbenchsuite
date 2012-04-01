@@ -64,9 +64,21 @@ args = -j,1
 [kernel2]
 test = kernel_compile
 args = -j,2
+[kernel3]
+test = kernel_compile
+args = -j,3
 [kernel4]
 test = kernel_compile
 args = -j,4
+[kernel5]
+test = kernel_compile
+args = -j,5
+[kernel6]
+test = kernel_compile
+args = -j,6
+[kernel7]
+test = kernel_compile
+args = -j,7
 [kernel8]
 test = kernel_compile
 args = -j,8
@@ -82,9 +94,6 @@ args = -j,64
 [kernel128]
 test = kernel_compile
 args = -j,128
-[kernel264]
-test = kernel_compile
-args = -j,264
 
 [massive_intr]
 
