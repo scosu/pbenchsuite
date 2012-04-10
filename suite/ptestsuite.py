@@ -390,14 +390,10 @@ def testsuite_run(testsuite, runname, path):
 	for i in testsuite.tests:
 		vprint("Running Test " + str(ct + 1) + "/" + str(len(testsuite.tests)))
 		if remaining_min != -1:
-			vprint("Estimated minimal remaining runtime: "
-				+ time.strftime('%dd%H:%M:%S', time.gmtime(remaining_min)))
 			vprint("Estimated minimal finishing date: "
 				+ time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time() + remaining_min)))
 			remaining_min -= i.min_runtime
 		if remaining_max != -1:
-			vprint("Estimated maximal remaining runtime: "
-				+ time.strftime('%dd%H:%M:%S', time.gmtime(remaining_max)))
 			vprint("Estimated maximal finishing date: "
 				+ time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time() + remaining_max)))
 			if i.max_runtime == -1:
