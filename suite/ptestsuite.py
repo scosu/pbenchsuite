@@ -82,7 +82,7 @@ def monitors_install(base):
 def monitors_write_headers(tgtdir):
 	tgtdir = os.path.join(tgtdir, 'monitors')
 	for k,v in monitors.items():
-		monitor_file = os.path.join(tgtdir, k)
+		monitor_file = os.path.join(tgtdir, k + '.csv')
 		f = open(monitor_file, 'a')
 		c = csv.writer(f, delimiter=',')
 		c.writerow(['time_s'] + v.get_hdr())
@@ -129,7 +129,7 @@ def monitors_stop(tgtdir):
 	recording = False
 	time.sleep(2)
 	for k,v in monitor_data.items():
-		tgtfile = os.path.join(tgtdir, k)
+		tgtfile = os.path.join(tgtdir, k + '.csv')
 		f = open(tgtfile, "a")
 		c = csv.writer(f, delimiter=',')
 		for i in v:
@@ -278,7 +278,7 @@ def test(test, path):
 	max_stderr = 0
 	runs = 0
 
-	f = open(os.path.join(result_path, 'results'), 'w')
+	f = open(os.path.join(result_path, 'results.csv'), 'w')
 	c = csv.writer(f, delimiter=',')
 	vprint('cd ' + test.directory)
 	os.chdir(test.directory)
@@ -370,7 +370,7 @@ def testsuite_run(testsuite, runname, path):
 	if not os.path.exists(testresultpath):
 		os.makedirs(testresultpath)
 	store_system_information(runpath)
-	summarypath = os.path.join(runpath, 'summary')
+	summarypath = os.path.join(runpath, 'summary.csv')
 	c = csv.writer(open(summarypath, 'a'), delimiter=',')
 	vprint("Starting tests for testsuite")
 	remaining_min = 0
