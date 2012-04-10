@@ -1,0 +1,34 @@
+{
+	"test" : "testname1",
+	"instances" :
+	[
+		{
+			"meta" :
+			{
+				"args" : {}
+			},
+			"runs" :
+			[
+				{
+					"time" : 1231234235.342,
+					"results" : {},
+					"monitors" :
+					{
+						"monitor1" :
+						{
+							"data" :
+							[
+								{
+									"time" : 12343452.3452,
+									"mon_value1" : 3452,
+									"mon_value2" : 342
+								}
+							]
+						},
+						"monitor3" : {}
+					}
+				}
+			]
+		}
+	]
+}
