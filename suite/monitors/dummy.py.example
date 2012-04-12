@@ -11,24 +11,24 @@ def check_requirements():
 def install():
 	return True
 
-# The get_hdr function is called to get the specifier for the results. It will
-# be the first line in every monitoring file.
-def get_hdr():
-	return ['random_number']
+# Return some meta information about the monitor or something run independent.
+# Whatever you like to have in the resulting json files.
+# You can also return any string,float,int,dict,list, also empty ones
+def to_dict():
+	return {'description': 'something intelligent here', 'monitor_version': '0.0.0'}
 
 # This is called about one second before the first get() call.
 def pre():
-	return
+	return 0
 
 # post() is called a unknown time after the last get() call to clean up
 def post():
-	return
+	return 0
 
-# get() should return a list of floats or integers. No inner lists or strings
-# are allowed. The function is called once every second if the system is stable,
-# and all monitors don't need much time to calculate their results.
+# get() can return every recursively structured type of dict, list, string,
+# float, int
 
 # NOTICE: Keep in mind that one thread is managing all monitors, so don't use
 # sleeps, or time consuming calculations.
 def get():
-	return [23]
+	return {'var1': 324, 'blub':[43,532]}
