@@ -228,11 +228,11 @@ def run_limit_options(config, section):
 
 def execute_cmd(cmd):
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	p.wait()
+	stdo, stde = p.communicate()
 	result = {
 		'returncode': p.returncode,
-		'stdout': p.stdout.read().decode(),
-		'stderr': p.stderr.read().decode()}
+		'stdout': stdo.decode(),
+		'stderr': stde.decode()}
 	return result
 
 
