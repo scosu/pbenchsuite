@@ -143,9 +143,8 @@ class pbenchsuite:
 		self.data['kernal'] = execute_cmd(['uname', '-a'])
 
 	def get_monitor(self, mon):
-		if mon in self.monitors:
-			return self.monitors[mon]
-		self.monitors[mon] = monitor(mon)
+		if mon not in self.monitors:
+			self.monitors[mon] = monitor(mon)
 		return self.monitors[mon]
 
 	def add_benchsuite(self, path, runname):
