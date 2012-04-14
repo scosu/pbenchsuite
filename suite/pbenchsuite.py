@@ -4,14 +4,12 @@
 import sys
 import os
 import time
-import csv
 import numpy
 import math
 import threading
 import configparser
 import subprocess
 import signal
-import shutil
 import logging
 import argparse
 import json
