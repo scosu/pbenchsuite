@@ -1,37 +1,73 @@
 # This file can configure everything that is essential for the testsuite.
 
 [general]
-# min_runs defines the minimum runs per test
+# All options in this section are optional.
+
+
+# min_runs max_runs define the minimum/maximum runs per test instance
 min_runs = 6
-# max_runs defines the maximum runs per test
-max_runs = 10
+#max_runs = 10
+
+# relative_min/max_runs define the relative number of runs. So if the test
+# defines min_runs = 3 and relative_min_runs = 2.5 that will result in
+# min_runs * relative_min_runs = 7.5 => minimum 7 runs
+# Total will be max(min_runs, relative_min_runs * test_min_runs)
+#relative_min_runs = 1.0
+#relative_max_runs = 1.0
+
+# min_runtime and max_runtime define the minimum/maximum runtime in seconds,
+# excluding the warmup runs.
+#min_runtime = 234
+#max_runtime = 3455
+
+# the above repeating rules are checked in the following order:
+# 1) min_runs
+# 2) min_runtime
+# 3) relative_min_runs
+# 4) max_runtime
+# 5) relative_max_runs
+# 6) max_runs
+# 7) relative_stderr
+#
+# So for example if the relative_min_runs condition is not met yet and the
+# runtime is higher than max_runtime, so the test will still repeat, until
+# relative_min_runs is fullfilled.
+
+
 # warmup runs to heat up the caches before running the test. Default: 1
 # Priority of warmup_runs definitions:
 # 1) testsuite config test specific
 # 2) testsuite config global
 # 3) test config
-warmup_runs = 2
+#warmup_runs = 2
+#relative_warmup_runs = 2.0
+# The testsuite will execute max(warmup_runs, test_warmup_runs*relative_warmup_runs)
+# warump runs before measurement
 
-# min_runtime and max_runtime define the minimum and maximum runtime for repeated
-# runs of a test. Unit is seconds.
-max_runtime = 3600
-min_runtime = 300
-# stderr is multiplied with the average result to get the maximal allowed
+# == Config precedence ==
+# The above absolut values may be defined in the testinstance sections in this
+# file, in the general section of this file and in the test config. The precedence
+# is ordered like this:
+# testinstance > general > test
+
+
+
+# relative_stderr is multiplied with the average result to get the maximal allowed
 # standard error.
 # Example:
 # Average result is 20, stderr is 0.01. Then ptestsuite tries to reach a
 # standard error less than 20*0.01=0.2. As soon as the standard error is small
 # enough and the minimum runs are done, ptestsuite continues with the next test.
-stderr = 0.01
+relative_stderr = 0.01
 
 # Define the monitors that should run for this testsuite.(without .py at the end)
-monitors = mon_memory, mon_stat
+monitors = mon_memory
 
 # After this general section the tests are following. The tests are executed in
 # the order defined in this configuration file. The section name is the name
 # for the result directory.
 
-# All options in a test section are optional.
+# All options in a testinstance section are optional.
 [dummyname]
 # If test is not defined, the section name is used as test identifier.
 test = dummy
@@ -44,20 +80,17 @@ test = dummy
 args = +%s
 #post_args = 55,2443efsdv
 
-# The test will be executed at least 'min_runs' times
-#min_runs = 10
-# Maximum runs
-#max_runs = 42
+# further optional options for a testinstance are the following. See the general
+# section for more information
+#min_runs
+#max_runs
+#relative_min_runs
+#relative_max_runs
+#min_runtime
+#max_runtime
+#warmup_runs
 
-# Warmup runs. Useful to measure only hot cache tests. Warmup runs do not
-# produce any data.
-# A setting in this file will override a warmup setting in the test config.
-# Default is 1
-warmup_runs = 2
-
-min_runtime = 50
-max_runtime = 600
 
 [dummytest2]
 test = dummy
-args = +%S
+args = +%s
