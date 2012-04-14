@@ -16,16 +16,6 @@ import json
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
 
-monitors = {}
-monitor_data = {}
-recording = False
-
-benchs = {}
-
-install_state_dir = os.path.join('monitors', '.install_state')
-
-dev_null = open("/dev/null", "w")
-
 class monitor:
 	def __init__(self, name):
 		self.name = name
