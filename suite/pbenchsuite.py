@@ -22,7 +22,7 @@ monitors = {}
 monitor_data = {}
 recording = False
 
-tests = {}
+benchs = {}
 
 install_state_dir = os.path.join('monitors', '.install_state')
 
@@ -83,15 +83,15 @@ class monitor_proc:
 		while self.stop_rec == True:
 			time.sleep(0.1)
 
-class ptestsuite:
+class pbenchsuite:
 	data = {}
 	base_path = ""
 	monitors_path = ""
-	tests_path = ""
+	benchs_path = ""
 	results_path = ""
 	state_path = ""
 	state_mon_installed_path = ""
-	testsuites_path = ""
+	benchsuites_path = ""
 
 	def init_dir(self, path):
 		os.makedirs(path)
@@ -104,22 +104,22 @@ class ptestsuite:
 		self.monitors_path = os.path.join(base_path, 'monitors')
 		os.makedirs(self.monitors_path, exist_ok = True)
 		sys.path.insert(0, self.monitors_path)
-		self.tests_path = os.path.join(base_path, 'tests')
-		os.makedirs(self.tests_path, exist_ok = True)
+		self.benchs_path = os.path.join(base_path, 'benchmarks')
+		os.makedirs(self.benchs_path, exist_ok = True)
 		self.results_path = os.path.join(base_path, 'results')
 		os.makedirs(self.results_path, exist_ok = True)
 		self.state_path = os.path.join(base_path, 'state')
 		os.makedirs(self.state_path, exist_ok = True)
 		self.state_mon_installed_path = os.path.join(self.state_path, 'monitors_installed')
 		os.makedirs(self.state_mon_installed_path, exist_ok = True)
-		self.state_test_installed_path = os.path.join(self.state_path, 'tests_installed')
-		os.makedirs(self.state_test_installed_path, exist_ok = True)
-		self.testsuites_path = os.path.join(base_path, 'testsuites')
-		os.makedirs(self.testsuites_path, exist_ok = True)
+		self.state_bench_installed_path = os.path.join(self.state_path, 'benchs_installed')
+		os.makedirs(self.state_bench_installed_path, exist_ok = True)
+		self.benchsuites_path = os.path.join(base_path, 'benchsuites')
+		os.makedirs(self.benchsuites_path, exist_ok = True)
 
-		self.testsuites = []
+		self.benchsuites = []
 		self.monitors = {}
-		self.loaded_tests = {}
+		self.loaded_benchs = {}
 		self.store_system_information()
 
 	def store_system_information(self):
@@ -160,23 +160,23 @@ class ptestsuite:
 		self.monitors[mon] = monitor(mon)
 		return self.monitors[mon]
 
-	def add_testsuite(self, path, runname):
+	def add_benchsuite(self, path, runname):
 		if not os.path.isabs(path):
 			if not os.path.isfile(path):
-				path = os.path.join(self.testsuites_path, path)
+				path = os.path.join(self.benchsuites_path, path)
 		if not os.path.isfile(path):
-			logging.critical("Can't find testsuite " + path)
+			logging.critical("Can't find benchsuite " + path)
 			return -1
 
-		self.testsuites.append(testsuite(path, self, runname))
+		self.benchsuites.append(benchsuite(path, self, runname))
 		return 0
 
 	def check_requirements(self):
 		all_reqs = []
-		for k,test in self.loaded_tests.items():
-			reqs = test.check_requirements()
+		for k,bench in self.loaded_benchs.items():
+			reqs = bench.check_requirements()
 			if len(reqs) != 0:
-				logging.critical("Test '" + test.name + "' requires following missing packages")
+				logging.critical("Benchmark '" + bench.name + "' requires following missing packages")
 			all_reqs += reqs
 			for i in reqs:
 				logging.critical("\t" + i)
@@ -198,11 +198,11 @@ class ptestsuite:
 
 	def install(self):
 		success = 1
-		for k,test in self.loaded_tests.items():
-			a = test.install()
+		for k,bench in self.loaded_benchs.items():
+			a = bench.install()
 			if a != 0:
 				success = 0
-				logging.critical("Test " + test.name + " failed installing")
+				logging.critical("Benchmark " + bench.name + " failed installing")
 		for k,v in self.monitors.items():
 			a = v.install(self)
 			if a != 0:
@@ -215,13 +215,13 @@ class ptestsuite:
 
 	def run(self):
 		failed = 0
-		for suite in self.testsuites:
+		for suite in self.benchsuites:
 			suite.run()
-		for suite in self.testsuites:
-			if len(suite.failed_tests) != 0:
-				logging.error("Testsuite " + suite.name + " failed to run some tests:")
+		for suite in self.benchsuites:
+			if len(suite.failed_benchs) != 0:
+				logging.error("Benchsuite " + suite.name + " failed to run some benchs:")
 				failed = 1
-				for i in suite.failed_tests:
+				for i in suite.failed_benchs:
 					logging.error("\t" + i)
 		return failed
 
@@ -249,16 +249,16 @@ def execute_cmd(cmd):
 	return result
 
 
-class test:
+class bench:
 	options = {}
 	psuite = None
 	name = ""
-	test_path = ""
-	def __init__(self, psuite, testname):
-		logging.debug('Creating test ' + testname)
+	bench_path = ""
+	def __init__(self, psuite, benchname):
+		logging.debug('Creating bench ' + benchname)
 		conf = configparser.RawConfigParser()
-		test_path = os.path.join(psuite.tests_path, testname)
-		conf.read(os.path.join(test_path, 'config'))
+		bench_path = os.path.join(psuite.benchs_path, benchname)
+		conf.read(os.path.join(bench_path, 'config'))
 		self.options = run_limit_options(conf, 'general')
 		list_opts = ['pre_args', 'args', 'post_args']
 		for i in list_opts:
@@ -267,11 +267,11 @@ class test:
 			else:
 				self.options[i] = []
 		self.psuite = psuite
-		self.name = testname
-		self.test_path = test_path
+		self.name = benchname
+		self.bench_path = bench_path
 
 	def check_requirements(self):
-		req_path = os.path.join(self.test_path, 'requirements')
+		req_path = os.path.join(self.bench_path, 'requirements')
 		if not os.path.isfile(req_path):
 			return []
 		data = execute_cmd([req_path])
@@ -282,15 +282,15 @@ class test:
 		return result
 
 	def install(self):
-		inst_path = os.path.join(self.test_path, 'install')
+		inst_path = os.path.join(self.bench_path, 'install')
 		if not os.path.exists(inst_path):
 			return 0
-		inst_state = os.path.join(self.psuite.state_test_installed_path, self.name)
+		inst_state = os.path.join(self.psuite.state_bench_installed_path, self.name)
 		if os.path.isfile(inst_state):
 			return 0
 		installation = execute_cmd([inst_path])
 		if installation['returncode'] != 0:
-			logging.critical("Test " + self.name + " failed installing. Stderr:")
+			logging.critical("Benchmark " + self.name + " failed installing. Stderr:")
 			logging.critical(installation['stderr'])
 			return 1
 		f = open(inst_state, 'w')
@@ -299,8 +299,8 @@ class test:
 		return 0
 
 	def pre(self, args):
-		pre_path = os.path.join(self.test_path, 'pre')
-		os.chdir(self.test_path)
+		pre_path = os.path.join(self.bench_path, 'pre')
+		os.chdir(self.bench_path)
 		if not os.path.isfile(pre_path):
 			return 0
 
@@ -312,7 +312,7 @@ class test:
 		result = execute_cmd(cmd)
 		return result['returncode']
 	def post(self, args):
-		post_path = os.path.join(self.test_path, 'post')
+		post_path = os.path.join(self.bench_path, 'post')
 		if not os.path.isfile(post_path):
 			return 0
 
@@ -324,7 +324,7 @@ class test:
 		result = execute_cmd(cmd)
 		return result['returncode']
 	def run(self, args):
-		run_path = os.path.join(self.test_path, 'run')
+		run_path = os.path.join(self.bench_path, 'run')
 		cmd = [run_path]
 		if args == None:
 			cmd += self.options['args']
@@ -337,7 +337,7 @@ class test:
 		data = {}
 		data['options'] = self.options
 		data['name'] = self.name
-		data['test_path'] = self.test_path
+		data['bench_path'] = self.bench_path
 		return data
 
 
@@ -363,28 +363,28 @@ def result_list(d):
 def calc_stderr(values):
 	return math.sqrt(numpy.var(values)) / math.sqrt(float(len(values)))
 
-class testinstance:
-	def __init__(self, test, config, sect, suite):
-		self.test = test
+class benchinstance:
+	def __init__(self, bench, config, sect, suite):
+		self.bench = bench
 		self.suite = suite
 		self.monitors = suite.monitors
 		self.info = {}
 		self.result_file = os.path.join(suite.results_path, sect + '.json')
-		test_opts = self.test.options
+		bench_opts = self.bench.options
 		suite_opts = suite.options
 		inst_opts = run_limit_options(config, sect)
-		opts = test_opts.copy()
+		opts = bench_opts.copy()
 		for k,v in suite_opts.items():
 			opts[k] = v
 		for k,v in inst_opts.items():
 			opts[k] = v
 		if 'relative_min_runs' in opts:
-			opts['relative_min_runs'] = opts['relative_min_runs'] * test_opts['min_runs']
+			opts['relative_min_runs'] = opts['relative_min_runs'] * bench_opts['min_runs']
 		if 'relative_max_runs' in opts:
-			opts['relative_max_runs'] = opts['relative_max_runs'] * test_opts['max_runs']
+			opts['relative_max_runs'] = opts['relative_max_runs'] * bench_opts['max_runs']
 		if 'relative_warmup_runs' in opts:
 			opts['warmup_runs'] = max(opts['warmup_runs'],
-				round(opts['relative_warmup_runs'] * test_opts['warmup_runs']))
+				round(opts['relative_warmup_runs'] * bench_opts['warmup_runs']))
 		if 'warmup_runs' not in opts:
 			opts['warmup_runs'] = 1
 		if 'relative_min_runs' not in opts:
@@ -402,13 +402,13 @@ class testinstance:
 
 
 	def run_once(self):
-		self.test.pre(args = self.options['pre_args'])
+		self.bench.pre(args = self.options['pre_args'])
 		mon_proc = monitor_proc(self.monitors.values())
 		threading.Thread(target = mon_proc).start()
 		time.sleep(1)
-		self.last_run = self.test.run(args = self.options['args'])
+		self.last_run = self.bench.run(args = self.options['args'])
 		mon_proc.stop()
-		self.test.post(args = self.options['post_args'])
+		self.bench.post(args = self.options['post_args'])
 		logging.info("Last run:")
 		logging.info(self.last_run)
 
@@ -446,13 +446,13 @@ class testinstance:
 		self.data['info'] = self.info
 		start_time = time.time()
 		for i in range(0, self.options['warmup_runs']):
-			logging.info("Warmup Run " + str(i+1) + " of test instance " + self.name + " (test " + self.test.name + ")")
+			logging.info("Warmup Run " + str(i+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
 		self.data['warmup_time'] = time.time() - start_time
 		runs = 0
 		start_time = time.time()
 		while True:
-			logging.info("Run " + str(runs+1) + " of test instance " + self.name + " (test " + self.test.name + ")")
+			logging.info("Run " + str(runs+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
 			self.store_run_data()
 
@@ -486,7 +486,7 @@ class testinstance:
 		f = open(self.result_file, 'w')
 		all_data = {}
 		all_data['suite'] = self.suite.to_dict()
-		all_data['test'] = self.test.to_dict()
+		all_data['bench'] = self.bench.to_dict()
 		self.data['options'] = self.options
 		all_data['instance'] = self.data
 		logging.debug("Storing data of instance " + self.name + " to file " + self.result_file + " (size: " + str(sys.getsizeof(all_data)) + ")")
@@ -495,24 +495,24 @@ class testinstance:
 		self.data = {}
 
 
-class testsuite:
+class benchsuite:
 
 
 	def __init__(self, path, psuite, runname):
 		self.name = os.path.basename(path)
-		self.testinstances = []
-		self.failed_tests = []
+		self.benchinstances = []
+		self.failed_benchs = []
 		self.monitors = {}
 		self.data = {}
 		self.results_path = os.path.join(psuite.results_path, runname)
 		os.makedirs(self.results_path, exist_ok = True)
-		logging.debug("Constructing testsuite " + self.name + " with config file " + path)
+		logging.debug("Constructing benchsuite " + self.name + " with config file " + path)
 
 		conf = configparser.RawConfigParser()
 		logging.debug("reading config at " + path)
 		conf.read(path)
 
-		# set defaults for the testsuite
+		# set defaults for the benchsuite
 		self.options = {}
 		self.options['min_runs'] = 3
 		limit_opts = run_limit_options(conf, 'general')
@@ -526,18 +526,18 @@ class testsuite:
 		for sect in conf.sections():
 			if sect == 'general':
 				continue
-			testid = sect
-			if conf.has_option(sect, 'test'):
-				testid = conf.get(sect, 'test')
-			if testid not in psuite.loaded_tests:
-				tmp = test(psuite, testid)
-				psuite.loaded_tests[testid] = tmp
-			testid = psuite.loaded_tests[testid]
-			self.testinstances.append(testinstance(testid, conf, sect, self))
+			benchid = sect
+			if conf.has_option(sect, 'bench'):
+				benchid = conf.get(sect, 'bench')
+			if benchid not in psuite.loaded_benchs:
+				tmp = bench(psuite, benchid)
+				psuite.loaded_benchs[benchid] = tmp
+			benchid = psuite.loaded_benchs[benchid]
+			self.benchinstances.append(benchinstance(benchid, conf, sect, self))
 
 	def run(self):
 		self.data['run_start'] = time.time()
-		for instance in self.testinstances:
+		for instance in self.benchinstances:
 			instance.run()
 			instance.store_runs_to_file()
 		self.data['run_end'] = time.time()
@@ -554,7 +554,7 @@ class testsuite:
 
 
 
-# Some of the tests are using SIGUSR1 and SIGUSR2 for communication. To prevent
+# Some of the benchs are using SIGUSR1 and SIGUSR2 for communication. To prevent
 # this script from exiting, handle them with a dummy function
 def sig_dummy(x, y):
 	return
@@ -566,16 +566,16 @@ parser = argparse.ArgumentParser(description='PBenchSuite')
 parser.add_argument('suites', metavar='<SUITE>:<RUNNAME>', type=str, nargs='+', help='Suite name or path followed by the runname (The directory inside results where all results should be stored)')
 args = parser.parse_args()
 
-psuite = ptestsuite()
+psuite = pbenchsuite()
 
 for argstr in args.suites:
 	arg = argstr.split(':')
 	if len(arg) != 2:
 		print("ERROR: Failed to parse '" + argstr + "' correctly. Please read the help for information about the format")
 		sys.exit(1)
-	status = psuite.add_testsuite(arg[0], arg[1])
+	status = psuite.add_benchsuite(arg[0], arg[1])
 	if status != 0:
-		print("ERROR: Failed to add a testsuite. Aborting")
+		print("ERROR: Failed to add a benchsuite. Aborting")
 		sys.exit(1)
 
 s = psuite.check_requirements()

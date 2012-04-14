@@ -2,51 +2,51 @@
 warmup_runs = 1
 min_runs = 3
 max_runs = 30
-# 7 minutes minimum runtime per test
+# 7 minutes minimum runtime per benchmark
 min_runtime = 420
-# 30 minutes maximum runtime per test
+# 30 minutes maximum runtime per benchmark
 max_runtime = 1800
 stderr = 0.001
 monitors = mon_memory,mon_sched_latency,mon_schedstat,mon_stat
 
 [hackbench_10]
-test = hackbench
+benchmark = hackbench
 args = 10
 [hackbench_20]
-test = hackbench
+benchmark = hackbench
 args = 20
 [hackbench_30]
-test = hackbench
+benchmark = hackbench
 args = 30
 [hackbench_40]
-test = hackbench
+benchmark = hackbench
 args = 40
 [hackbench_50]
-test = hackbench
+benchmark = hackbench
 args = 50
 [hackbench_75]
-test = hackbench
+benchmark = hackbench
 args = 75
 [hackbench_100]
-test = hackbench
+benchmark = hackbench
 args = 100
 [hackbench_150]
-test = hackbench
+benchmark = hackbench
 args = 150
 [hackbench_200]
-test = hackbench
+benchmark = hackbench
 args = 200
 [hackbench_250]
-test = hackbench
+benchmark = hackbench
 args = 250
 [hackbench_300]
-test = hackbench
+benchmark = hackbench
 args = 300
 [hackbench_350]
-test = hackbench
+benchmark = hackbench
 args = 350
 [hackbench_400]
-test = hackbench
+benchmark = hackbench
 args = 400
 
 
@@ -59,167 +59,167 @@ args = 400
 [interbench]
 
 [kernel1]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,1
 [kernel2]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,2
 [kernel3]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,3
 [kernel4]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,4
 [kernel5]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,5
 [kernel6]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,6
 [kernel7]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,7
 [kernel8]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,8
 [kernel16]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,16
 [kernel32]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,32
 [kernel64]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,64
 [kernel128]
-test = kernel_compile
+benchmark = kernel_compile
 args = -j,128
 
 [massive_intr]
 
 [nbench]
 
-[pipe_test]
+[pipe_benchmark]
 
 [postfix_msg_passing]
 
 [unixbench_dhry2reg]
-test = unixbench
+benchmark = unixbench
 args = parallel,dhry2reg
 
 [unixbench_whetstone]
-test = unixbench
+benchmark = unixbench
 args = parallel,whetstone-double
 
 [unixbench_syscall]
-test = unixbench
+benchmark = unixbench
 args = parallel,syscall
 
 [unixbench_pipe]
-test = unixbench
+benchmark = unixbench
 args = parallel,pipe
 
 [unixbench_context1]
-test = unixbench
+benchmark = unixbench
 args = parallel,context1
 
 [unixbench_spawn]
-test = unixbench
+benchmark = unixbench
 args = parallel,spawn
 
 [unixbench_execl]
-test = unixbench
+benchmark = unixbench
 args = parallel,execl
 
 [unixbench_fstime-w]
-test = unixbench
+benchmark = unixbench
 args = parallel,fstime-w
 
 [unixbench_fstime-r]
-test = unixbench
+benchmark = unixbench
 args = parallel,fstime-r
 
 [unixbench_fstime]
-test = unixbench
+benchmark = unixbench
 args = parallel,fstime
 
 [unixbench_fsbuffer-w]
-test = unixbench
+benchmark = unixbench
 args = parallel,fsbuffer-w
 
 [unixbench_fsbuffer-r]
-test = unixbench
+benchmark = unixbench
 args = parallel,fsbuffer-r
 
 [unixbench_fsbuffer]
-test = unixbench
+benchmark = unixbench
 args = parallel,fsbuffer
 
 [unixbench_fsdisk-w]
-test = unixbench
+benchmark = unixbench
 args = parallel,fsdisk-w
 
 [unixbench_fsdisk-r]
-test = unixbench
+benchmark = unixbench
 args = parallel,fsdisk-r
 
 [unixbench_fsdisk]
-test = unixbench
+benchmark = unixbench
 args = parallel,fsdisk
 
 [unixbench_shell1]
-test = unixbench
+benchmark = unixbench
 args = parallel,shell1
 
 [unixbench_shell8]
-test = unixbench
+benchmark = unixbench
 args = parallel,shell8
 
 [unixbench_shell16]
-test = unixbench
+benchmark = unixbench
 args = parallel,shell16
 
 [unixbench_c]
-test = unixbench
+benchmark = unixbench
 args = parallel,C
 
 [unixbench_dc]
-test = unixbench
+benchmark = unixbench
 args = parallel,dc
 
 [unixbench_hanoi]
-test = unixbench
+benchmark = unixbench
 args = parallel,hanoi
 
 [unixbench_grep]
-test = unixbench
+benchmark = unixbench
 args = parallel,grep
 
 [unixbench_sysexec]
-test = unixbench
+benchmark = unixbench
 args = parallel,sysexec
 
 [yield_1]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,1
 [yield_2]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,2
 [yield_4]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,4
 [yield_8]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,8
 [yield_16]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,16
 [yield_32]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,32
 [yield_64]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,64
 [yield_128]
-test = yield_benchmark
+benchmark = yield_benchmark
 args = 30,128

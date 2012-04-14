@@ -44,8 +44,8 @@ def execute_cmd(cmd, sleep=0, ssh=None, ssh_option=None):
 	time.sleep(sleep)
 	return status
 
-# execute a testsuite with given settings. version is used to identify the
-# testsuite execution. This also parses the config file
+# execute a benchsuite with given settings. version is used to identify the
+# benchsuite execution. This also parses the config file
 def run_settings(base, setting, version):
 	vprint('run settings ' + base + ' ' + setting + ' ' + version)
 	conf = configparser.RawConfigParser()
@@ -63,25 +63,25 @@ def run_settings(base, setting, version):
 		setup_cmd = conf_default_cmd(conf, sec, 'setup_cmd', None)
 		pre_cmd = conf_default_cmd(conf, sec, 'pre_cmd', None)
 		post_cmd = conf_default_cmd(conf, sec, 'post_cmd', None)
-		testsuite_path = conf_default(conf, sec, 'testsuite_path', None)
-		if testsuite_path == None:
-			vprint('ERROR: section ' + sec + ' has no testsuite_path, aborting')
+		benchsuite_path = conf_default(conf, sec, 'benchsuite_path', None)
+		if benchsuite_path == None:
+			vprint('ERROR: section ' + sec + ' has no benchsuite_path, aborting')
 			return
 		working_dir = conf_default(conf, sec, 'working_dir', '/tmp')
 		sleep = int(conf_default(conf, sec, 'sleep_between', 0))
-		testsuites = conf_default_cmd(conf, sec, 'testsuites', None)
+		benchsuites = conf_default_cmd(conf, sec, 'benchsuites', None)
 		execute_cmd(setup_cmd, sleep, ssh, ssh_option)
 		execute_cmd(pre_cmd, sleep, ssh, ssh_option)
-		for suite in testsuites:
-			vprint('executing testsuite ' + suite)
+		for suite in benchsuites:
+			vprint('executing benchsuite ' + suite)
 			now_str = time.strftime('%Y-%m-%d-%H-%M-%S')
 			test_identifier = setting + '_' + version + '_' + now_str
 			cmd = []
 			if ssh == None:
 				os.chdir(working_dir)
-				cmd = [testsuite_path, suite, test_identifier]
+				cmd = [benchsuite_path, suite, test_identifier]
 			else:
-				cmd = ['cd', working_dir, '&&', testsuite_path, suite, test_identifier]
+				cmd = ['cd', working_dir, '&&', benchsuite_path, suite, test_identifier]
 			execute_cmd(cmd, 0, ssh, ssh_option)
 		execute_cmd(post_cmd, sleep, ssh, ssh_option)
 

@@ -1,17 +1,17 @@
-# This file can configure everything that is essential for the testsuite.
+# This file can configure everything that is essential for the benchsuite.
 
 [general]
 # All options in this section are optional.
 
 
-# min_runs max_runs define the minimum/maximum runs per test instance
+# min_runs max_runs define the minimum/maximum runs per bench instance
 min_runs = 6
 #max_runs = 10
 
-# relative_min/max_runs define the relative number of runs. So if the test
+# relative_min/max_runs define the relative number of runs. So if the bench
 # defines min_runs = 3 and relative_min_runs = 2.5 that will result in
 # min_runs * relative_min_runs = 7.5 => minimum 7 runs
-# Total will be max(min_runs, relative_min_runs * test_min_runs)
+# Total will be max(min_runs, relative_min_runs * bench_min_runs)
 #relative_min_runs = 1.0
 #relative_max_runs = 1.0
 
@@ -30,49 +30,49 @@ min_runs = 6
 # 7) relative_stderr
 #
 # So for example if the relative_min_runs condition is not met yet and the
-# runtime is higher than max_runtime, so the test will still repeat, until
+# runtime is higher than max_runtime, so the bench will still repeat, until
 # relative_min_runs is fullfilled.
 
 
-# warmup runs to heat up the caches before running the test. Default: 1
+# warmup runs to heat up the caches before running the bench. Default: 1
 # Priority of warmup_runs definitions:
-# 1) testsuite config test specific
-# 2) testsuite config global
-# 3) test config
+# 1) benchsuite config bench specific
+# 2) benchsuite config global
+# 3) bench config
 #warmup_runs = 2
 #relative_warmup_runs = 2.0
-# The testsuite will execute max(warmup_runs, test_warmup_runs*relative_warmup_runs)
+# The benchsuite will execute max(warmup_runs, bench_warmup_runs*relative_warmup_runs)
 # warump runs before measurement
 
 # == Config precedence ==
-# The above absolut values may be defined in the testinstance sections in this
-# file, in the general section of this file and in the test config. The precedence
+# The above absolut values may be defined in the benchinstance sections in this
+# file, in the general section of this file and in the bench config. The precedence
 # is ordered like this:
-# testinstance > general > test
+# benchinstance > general > bench
 
 
 
 # relative_stderr is multiplied with the average result to get the maximal allowed
 # standard error.
 # Example:
-# Average result is 20, stderr is 0.01. Then ptestsuite tries to reach a
+# Average result is 20, stderr is 0.01. Then pbenchsuite tries to reach a
 # standard error less than 20*0.01=0.2. As soon as the standard error is small
-# enough and the minimum runs are done, ptestsuite continues with the next test.
+# enough and the minimum runs are done, pbenchsuite continues with the next bench.
 relative_stderr = 0.01
 
-# Define the monitors that should run for this testsuite.(without .py at the end)
+# Define the monitors that should run for this benchsuite.(without .py at the end)
 monitors = mon_memory
 
-# After this general section the tests are following. The tests are executed in
+# After this general section the benchs are following. The benchs are executed in
 # the order defined in this configuration file. The section name is the name
 # for the result directory.
 
-# All options in a testinstance section are optional.
+# All options in a benchinstance section are optional.
 [dummyname]
-# If test is not defined, the section name is used as test identifier.
-test = dummy
+# If bench is not defined, the section name is used as bench identifier.
+bench = dummy
 
-# All args options will overwrite the settings of the test's config file.
+# All args options will overwrite the settings of the bench's config file.
 # pre_args is a list of comma-seperated arguments for the pre script.
 #pre_args = 13,bla,34
 # args is a list of comma-seperated arguments passed to the hdr and run script.
@@ -80,7 +80,7 @@ test = dummy
 args = +%s
 #post_args = 55,2443efsdv
 
-# further optional options for a testinstance are the following. See the general
+# further optional options for a benchinstance are the following. See the general
 # section for more information
 #min_runs
 #max_runs
@@ -91,6 +91,6 @@ args = +%s
 #warmup_runs
 
 
-[dummytest2]
-test = dummy
+[dummybench2]
+bench = dummy
 args = +%s
