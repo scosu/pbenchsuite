@@ -1,5 +1,3 @@
 #!/bin/bash
 
 # This file can be used to install any necessary software or download packages.
-# After installing please create a file ".installed" in this directory if
-# installation was successfull.
