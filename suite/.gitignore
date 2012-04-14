@@ -1,4 +1,5 @@
 *.swp
 monitors/__pycache__
 monitors/.install_state
-results
+results/
+state/
