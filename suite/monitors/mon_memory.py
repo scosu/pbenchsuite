@@ -8,34 +8,26 @@ def check_requirements():
 	return []
 
 def install():
-	return True
+	return 0
 
 def pre():
-	return
+	return 0
 def post():
-	return
-def get_hdr():
-	f = open('/proc/meminfo', 'r')
-	cont = f.read().splitlines()
-	f.close()
-	result = []
-	for i in cont:
-		m = re.match("^(\S*):\s*[0-9]+\s*(\S*)", i)
-		hdr = m.group(1)
-		if m.group(2) != '':
-			hdr += '_' + m.group(2)
-		result.append(hdr)
-	return result
+	return 0
+def to_dict():
+	return {
+		'name': 'Memory monitor',
+		'description': 'Reads /proc/meminfo'}
 
 def get():
 	f = open('/proc/meminfo', 'r')
 	cont = f.read().splitlines()
 	f.close()
-	result = []
+	result = {}
 	for i in cont:
-		match = re.match("^\S*\s*([0-9]+)\s*\S*", i)
-		if (match == None):
-			result.append(0)
-		else:
-			result.append(int(match.group(1)));
+		match = re.match("^(\S*):\s*([0-9]+)\s*(\S*)\s*", i)
+		if (match != None):
+			result[match.group(1)] = {
+				'value': int(match.group(2)),
+				'unit': match.group(3)}
 	return result

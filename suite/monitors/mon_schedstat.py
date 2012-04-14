@@ -4,9 +4,10 @@ import os
 
 init = None
 
+hdrs = ['yields', 'expired_depr', 'sched_requests', 'sched_idle', 'ttwus', 'ttwu_cpu', 'time_running', 'time_waiting', 'timeslices']
+
 def check_requirements():
 	if not os.path.isfile('/proc/schedstat'):
-		print("ERROR: can't find /proc/schedstat, please use a kernel with scheduer statistics support")
 		return ['/proc/schedstat']
 	return []
 def install():
@@ -35,7 +36,11 @@ def post():
 	return
 def get():
 	results = collect_data()
-	return [results[i] - init[i] for i in range(0, len(init))]
+	jsonr = {}
+	for i in range(0, len(init)):
+		jsonr[hdrs[i]] = results[i] - init[i]
+	return jsonr
 
-def get_hdr():
-	return ['yields', 'expired_depr', 'sched_requests', 'sched_idle', 'ttwus', 'ttwu_cpu', 'time_running', 'time_waiting', 'timeslices']
+def to_dict():
+	return {'name': 'Scheduling statistics',
+		'description': 'Uses /proc/schedstat to monitor essential scheduler characteristics'}

@@ -7,15 +7,18 @@ def check_requirements():
 def install():
 	return True
 def pre():
-	return
+	return 0
 
 def post():
-	return
-def get_hdr():
-	return ['Latency_s']
+	return 0
+def to_dict():
+	return {'name': 'Scheduler Latency Monitor',
+		'description': 'Measures the latency of sleeping. It sleeps 0.25s and measures the deviation from the desired sleep time.'}
+
 def get():
 	start_time = time.time()
 	time.sleep(0.25)
 	end_time = time.time()
-	return [end_time - start_time - 0.25]
+	return {'value': end_time - start_time - 0.25,
+		'unit': 's'}
 
