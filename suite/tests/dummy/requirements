@@ -3,5 +3,5 @@
 # execute requirement checks here, and return the missing requirements by
 # printing the requirements, one per row. If there is nothing printed, the
 # testsuite assumes that all requirements are fullfilled.
-echo package1
-echo package2
+#echo package1
+#echo package2
