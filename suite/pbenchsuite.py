@@ -14,7 +14,6 @@ import logging
 import argparse
 import json
 
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
 
 class monitor:
 	def __init__(self, name):
@@ -548,29 +547,32 @@ def sig_dummy(x, y):
 signal.signal(signal.SIGUSR1, sig_dummy)
 signal.signal(signal.SIGUSR2, sig_dummy)
 
+if __name__ == '__main__':
 
-parser = argparse.ArgumentParser(description='PBenchSuite')
-parser.add_argument('suites', metavar='<SUITE>:<RUNNAME>', type=str, nargs='+', help='Suite name or path followed by the runname (The directory inside results where all results should be stored)')
-args = parser.parse_args()
+	logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
 
-psuite = pbenchsuite()
+	parser = argparse.ArgumentParser(description='PBenchSuite')
+	parser.add_argument('suites', metavar='<SUITE>:<RUNNAME>', type=str, nargs='+', help='Suite name or path followed by the runname (The directory inside results where all results should be stored)')
+	args = parser.parse_args()
 
-for argstr in args.suites:
-	arg = argstr.split(':')
-	if len(arg) != 2:
-		print("ERROR: Failed to parse '" + argstr + "' correctly. Please read the help for information about the format")
+	psuite = pbenchsuite()
+
+	for argstr in args.suites:
+		arg = argstr.split(':')
+		if len(arg) != 2:
+			print("ERROR: Failed to parse '" + argstr + "' correctly. Please read the help for information about the format")
+			sys.exit(1)
+		status = psuite.add_benchsuite(arg[0], arg[1])
+		if status != 0:
+			print("ERROR: Failed to add a benchsuite. Aborting")
+			sys.exit(1)
+
+	s = psuite.check_requirements()
+	if s != 0:
+		print("ERROR: Missing requirements. Aborting")
 		sys.exit(1)
-	status = psuite.add_benchsuite(arg[0], arg[1])
-	if status != 0:
-		print("ERROR: Failed to add a benchsuite. Aborting")
+	s = psuite.install()
+	if s != 0:
+		print("ERROR: Installation failed. Aborting")
 		sys.exit(1)
-
-s = psuite.check_requirements()
-if s != 0:
-	print("ERROR: Missing requirements. Aborting")
-	sys.exit(1)
-s = psuite.install()
-if s != 0:
-	print("ERROR: Installation failed. Aborting")
-	sys.exit(1)
-psuite.run()
+	psuite.run()
