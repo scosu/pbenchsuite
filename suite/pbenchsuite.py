@@ -4,7 +4,6 @@
 import sys
 import os
 import time
-import numpy
 import math
 import threading
 import configparser
@@ -345,9 +344,16 @@ def result_list(d):
 			results += result_list(i)
 	return results
 
+def calc_variance(values):
+	avg = sum(values)/len(values)
+	sumsqr = 0.0
+	for i in values:
+		sumsqr += (avg - i)**2
+	return sumsqr / len(values)
+
 # calculate the standard error, not standard deviation
 def calc_stderr(values):
-	return math.sqrt(numpy.var(values)) / math.sqrt(float(len(values)))
+	return math.sqrt(calc_variance(values)) / math.sqrt(float(len(values)))
 
 class benchinstance:
 	def __init__(self, bench, config, sect, suite):
