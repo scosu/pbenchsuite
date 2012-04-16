@@ -273,6 +273,7 @@ class bench:
 		inst_state = os.path.join(self.psuite.state_bench_installed_path, self.name)
 		if os.path.isfile(inst_state):
 			return 0
+		os.chdir(self.bench_path)
 		installation = execute_cmd([inst_path])
 		if installation['returncode'] != 0:
 			logging.critical("Benchmark " + self.name + " failed installing. Stderr:")
