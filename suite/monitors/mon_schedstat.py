@@ -11,7 +11,7 @@ def check_requirements():
 		return ['/proc/schedstat']
 	return []
 def install():
-	return True
+	return 0
 
 def collect_data():
 	results = None

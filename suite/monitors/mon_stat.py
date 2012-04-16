@@ -13,7 +13,7 @@ def check_requirements():
 		return ['/proc/stat']
 	return []
 def install():
-	return True
+	return 0
 
 def collect_data(cumulative_only=False):
 	f = open('/proc/stat', 'r')
