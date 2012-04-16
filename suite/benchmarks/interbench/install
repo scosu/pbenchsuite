@@ -5,7 +5,3 @@ wget http://ck.kolivas.org/apps/interbench/interbench-${ver}.tar.bz2 -O interben
 tar -xf interbench-${ver}.tar.bz2
 cd interbench-${ver}
 make clean && make interbench && cp interbench ..
-if [ $? -eq 0 ]
-then
-	touch ../.installed
-fi

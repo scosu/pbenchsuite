@@ -3,6 +3,7 @@ import time
 import os
 import subprocess
 import sys
+import json
 
 f = open('/proc/cpuinfo', 'r')
 procs = f.read()
@@ -25,10 +26,11 @@ else:
 	cmd.append('-j')
 	cmd.append(str(num_procs))
 f = open('/dev/null', 'w')
+data = {}
 start = time.time()
 p = subprocess.Popen(cmd, stdout=f, stderr=f)
 p.wait()
-end = time.time()
+data['runtime'] = time.time() - start
 f.close()
-print(end - start)
+print(json.dumps(data))
 

@@ -3,6 +3,7 @@
 import subprocess
 import time
 import sys
+import json
 
 forks = int(sys.argv[1])
 
@@ -14,4 +15,4 @@ for i in range(0, forks):
 for i in ps:
 	i.wait()
 end = time.time()
-print(end - start - 5)
+print(json.dumps({'runtime': (end - start - 5)}))

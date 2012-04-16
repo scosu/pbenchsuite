@@ -4,6 +4,7 @@
 
 import random
 import struct
+import sys
 
 random.seed(0)
 
@@ -14,6 +15,5 @@ for i in range(0, int(end/8)):
 	f.write(struct.pack('Q', random.randrange(0, 2**64)))
 f.close()
 
-f = open('.installed', 'w')
-f.write(" ")
-f.close()
+sys.exit(0)
+

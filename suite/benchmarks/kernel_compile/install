@@ -7,8 +7,4 @@ tar -xf linux-${ver}.tar.bz2
 cd linux-${ver}
 wget http://allfex.org/files/ptestsuite/kernel_compile/config-${ver} -O .config
 make oldconfig && make clean
-if [ $? -eq 0 ]
-then
-	touch ../.installed
-fi
 
