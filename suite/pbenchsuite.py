@@ -559,6 +559,7 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='PBenchSuite')
 	parser.add_argument('suites', metavar='<SUITE>:<RUNNAME>', type=str, nargs='+', help='Suite name or path followed by the runname (The directory inside results where all results should be stored)')
+	parser.add_argument('-i', '--install', dest='install_only', action='store_true', default=False, help='Only install the necessary tests')
 	args = parser.parse_args()
 
 	psuite = pbenchsuite()
@@ -581,4 +582,6 @@ if __name__ == '__main__':
 	if s != 0:
 		print("ERROR: Installation failed. Aborting")
 		sys.exit(1)
+	if args.install_only:
+		sys.exit(0)
 	psuite.run()
