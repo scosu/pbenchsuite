@@ -416,6 +416,8 @@ class benchinstance:
 		self.data['runs'].append(last)
 
 	def stderr_okay(self):
+		if 'relative_stderr' not in self.options['relative_stderr']:
+			return False
 		sums = None
 		for i in self.data['runs']:
 			value_list = result_list(i['results'])
