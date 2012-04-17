@@ -520,8 +520,8 @@ class benchsuite:
 			if sect == 'general':
 				continue
 			benchid = sect
-			if conf.has_option(sect, 'bench'):
-				benchid = conf.get(sect, 'bench')
+			if conf.has_option(sect, 'benchmark'):
+				benchid = conf.get(sect, 'benchmark')
 			if benchid not in psuite.loaded_benchs:
 				tmp = bench(psuite, benchid)
 				psuite.loaded_benchs[benchid] = tmp
