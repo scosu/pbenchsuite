@@ -1,9 +1,10 @@
 [general]
 warmup_runs = 1
-# 7 minutes minimum runtime per benchmark
-min_runtime = 420
-# 30 minutes maximum runtime per benchmark
-max_runtime = 1800
+# 10 minutes minimum runtime per benchmark
+min_runtime = 600
+# 60 minutes maximum runtime per benchmark
+max_runtime = 3600
+min_runs = 8
 relative_stderr = 0.001
 monitors = mon_memory,mon_sched_latency,mon_schedstat,mon_stat
 
