@@ -38,6 +38,8 @@ def get():
 	results = collect_data()
 	jsonr = {}
 	for i in range(0, len(init)):
+		if results[i] < init[i]:
+			init[i] = init[i] - 2**64
 		jsonr[hdrs[i]] = results[i] - init[i]
 	return jsonr
 
