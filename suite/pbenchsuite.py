@@ -51,7 +51,8 @@ class monitor_proc:
 		self.stop_rec = False
 	def sleep_remaining(self, start, sleep):
 		remain = sleep - (time.time() - start)
-		time.sleep(remain)
+		if remain > 0:
+			time.sleep(remain)
 
 	def __call__(self):
 		start = time.time()
