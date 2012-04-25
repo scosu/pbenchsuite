@@ -463,7 +463,7 @@ class benchinstance:
 			if self.options['relative_min_runs'] > runs:
 				logging.debug("relative_min_runs not reached")
 				continue
-			if self.options['max_runtime'] < now - start_time:
+			if 'max_runtime' in self.options and self.options['max_runtime'] < now - start_time:
 				logging.debug("max_runtime reached, abort")
 				break
 			if 'relative_max_runs' in self.options and self.options['relative_max_runs'] < runs:
