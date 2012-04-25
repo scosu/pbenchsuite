@@ -486,7 +486,7 @@ class benchinstance:
 		self.data['options'] = self.options
 		all_data['instance'] = self.data
 		logging.debug("Storing data of instance " + self.name + " to file " + self.result_file + " (size: " + str(sys.getsizeof(all_data)) + ")")
-		json.dump(all_data, f, indent=2, sort_keys=True)
+		json.dump(all_data, f)
 		f.close()
 		self.data = {}
 
