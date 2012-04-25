@@ -6,6 +6,26 @@ import argparse
 import logging
 import re
 
+def create_char_dict(d):
+	if isinstance(d, int):
+		return 'int'
+	if isinstance(d, float):
+		return 'float'
+	if isinstance(d, str):
+		return 'string'
+	if isinstance(d, list):
+		if len(d) == 0:
+			return []
+		types = []
+		types.append(create_char_dict(d[0]))
+		return types
+	if isinstance(d, dict):
+		types = {}
+		for k,v in d.items():
+			types[k] = create_char_dict(v)
+		return types
+	return "Unknown type"
+
 class instance_runs:
 	def __init__(self, runs):
 		self.runs = runs
@@ -46,6 +66,17 @@ class instance_runs:
 
 	def size(self):
 		return len(self.runs)
+
+
+	def print_characteristics(self, index = None):
+		char = {}
+		if index == None:
+			index = self.cur
+		if index == -1:
+			char = create_char_dict(self.runs)
+		else:
+			char = create_char_dict(self.runs[index])
+		print(json.dumps(char, indent=4))
 
 	def print(self, verbose = False, index = None):
 		if index == None:
@@ -96,6 +127,9 @@ class instance_file:
 
 	def set_path(self, path):
 		self.file_path = path
+	def print_characteristics(self):
+		char = create_char_dict(self.data)
+		print(json.dumps(char, indent=4))
 	def print(self, verbose = False):
 		print("Instance file: " + self.file_path)
 		data = self.data.copy()
@@ -144,7 +178,10 @@ def cmd_print(args):
 	for i in args.file:
 		instance = instance_file(args.file[0])
 		instance.load()
-		instance.print(verbose = args.verbose)
+		if args.types:
+			instance.print_characteristics()
+		else:
+			instance.print(verbose = args.verbose)
 		print("")
 
 def cmd_copy(args):
@@ -163,8 +200,16 @@ def cmd_browse(args):
 	if not instance.load():
 		return False
 	i = instance.get_runs()
+	last_cmd = None
 	while True:
 		cmd = input('>>> ')
+		if cmd.strip() == '.':
+			if last_cmd == None:
+				print("Error: There is no last command")
+				continue
+			cmd = last_cmd
+		else:
+			last_cmd = cmd
 		cmd_arg0 = re.match('\s*(\S+)\s*\(\s*\)\s*', cmd)
 		cmd_arg1 = re.match('\s*(\S+)\s*\(\s*(\S+)\s*\)\s*', cmd)
 		cmd_arg2 = re.match('\s*(\S+)\s*\(\s*(\S+)\s*,\s*(\S+)\s*\)\s*', cmd)
@@ -174,10 +219,13 @@ def cmd_browse(args):
 			if name == 'help':
 				print('x can be replaced by a range "lower:upper". This will affect all elements from lower to upper including upper')
 				print('Available Commands:')
+				print(	'	.			Repeat the last command')
 				print(	'	print(x)		Print data of run x in short')
 				print(	'	print_all()		The same as print but all runs')
 				print(	'	print_verbose(x)	Print data of run x in full length and indented')
 				print(	'	print_verbose_all()	The same as print_verbose but all runs')
+				print(	'	print_types(x)		Print types')
+				print(	'	print_types_all()	Print types of all runs')
 				print(	'	delete(x)		Delete data of run x')
 				print(	'	save()			Save the modified runs')
 				print(	'	items()			Print the number of items available')
@@ -186,6 +234,7 @@ def cmd_browse(args):
 				print(	'	next()			Go to the next item and print it in short')
 				print(	'	print()			Print the current item')
 				print(	'	print_verbose()		Print current item verbose')
+				print(	'	print_types()		Print types of the current item')
 				print(	'	set(x)			Go to item x and print it in short')
 				print(	'	prev()			Go to the previous item and print it in short')
 				print(	'	delete()		Delete current item')
@@ -198,6 +247,10 @@ def cmd_browse(args):
 					i.print(index = k)
 			elif name == 'print_verbose_all':
 				i.print(verbose = True, index = -1)
+			elif name == 'print_types_all':
+				i.print_characteristics(index = -1)
+			elif name == 'print_types':
+				i.print_characteristics()
 			elif name == 'save':
 				instance.store()
 			elif name == 'exit':
@@ -233,6 +286,8 @@ def cmd_browse(args):
 					i.delete(index = x)
 				elif name == 'set':
 					i.set(x)
+				elif name == 'print_types':
+					i.print_characteristics(x)
 				else:
 					print("Error: Unknown command " + name)
 			elif len(x_range) == 2:
@@ -250,6 +305,9 @@ def cmd_browse(args):
 				elif name == 'delete':
 					for k in reversed(range(x, y+1)):
 						i.delete(index = k)
+				elif name == 'print_types':
+					for k in range(x, y+1):
+						i.print_characteristics(index = k)
 				else:
 					print("Error: Unknown command " + name)
 			else:
@@ -265,7 +323,9 @@ if __name__ == '__main__':
 	parse_cmds = parser.add_subparsers()
 
 	parse_print = parse_cmds.add_parser('print', help='Print content of a result file')
-	parse_print.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False)
+	print_type = parse_print.add_mutually_exclusive_group()
+	print_type.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False)
+	print_type.add_argument('-t', '--types', dest='types', action='store_true', default=False)
 	parse_print.add_argument('file', nargs='+', metavar='RESULT.json')
 	parse_print.set_defaults(func=cmd_print)
 
