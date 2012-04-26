@@ -412,7 +412,10 @@ class benchinstance:
 
 	def store_run_data(self):
 		last = self.last_run
-		last['results'] = json.loads(last['stdout'])
+		try:
+			last['results'] = json.loads(last['stdout'])
+		except:
+			last['results'] = {"failure": 1}
 		del last['stdout']
 		last['monitors'] = {}
 		for k,v in self.monitors.items():
