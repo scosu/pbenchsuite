@@ -409,8 +409,6 @@ class benchinstance:
 		self.last_run = self.bench.run(args = self.options['args'])
 		mon_proc.stop()
 		self.bench.post(args = self.options['post_args'])
-		logging.info("Last run:")
-		logging.info(self.last_run)
 
 	def store_run_data(self):
 		last = self.last_run
@@ -456,6 +454,10 @@ class benchinstance:
 		for i in range(0, self.options['warmup_runs']):
 			logging.info("Warmup Run " + str(i+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
+			if last_run['returncode'] != 0:
+				self.store_run_data()
+				self.data['failure'] = 1
+				return last_run['returncode']
 		self.data['warmup_time'] = time.time() - start_time
 		runs = 0
 		start_time = time.time()
@@ -463,6 +465,9 @@ class benchinstance:
 			logging.info("Run " + str(runs+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
 			self.store_run_data()
+			if last_run['returncode'] != 0:
+				self.data['failure'] = 1
+				return last_run['returncode']
 
 			runs += 1
 			now = time.time()
@@ -546,8 +551,11 @@ class benchsuite:
 	def run(self):
 		self.data['run_start'] = time.time()
 		for instance in self.benchinstances:
-			instance.run()
+			failed = instance.run()
 			instance.store_runs_to_file()
+			if failed != 0:
+				logging.error("Bench instance failed to run: " + instance.name)
+				self.failed_benchs.append(instance.name)
 		self.data['run_end'] = time.time()
 
 	def to_dict(self):
