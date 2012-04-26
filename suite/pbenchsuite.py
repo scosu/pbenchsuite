@@ -447,7 +447,7 @@ class benchinstance:
 			# This is a situation, where the number of results varies
 			# which is not handled at the moment
 			# TODO
-			return True
+			return False
 
 
 	def run(self):
