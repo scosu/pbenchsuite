@@ -422,25 +422,31 @@ class benchinstance:
 		self.data['runs'].append(last)
 
 	def stderr_okay(self):
-		if 'relative_stderr' not in self.options:
-			return False
-		sums = None
-		for i in self.data['runs']:
-			value_list = result_list(i['results'])
-			if sums == None:
-				sums = []
-				for i in range(0, len(value_list)):
-					sums.append([])
-			for v in range(0, len(value_list)):
-				sums[v].append(value_list[v])
-		for i in sums:
-			avg = sum(i)/len(i)
-			stderr_goal = self.options['relative_stderr'] * avg
-			stderr = calc_stderr(i)
-			logging.debug("Stderr: " + str(stderr) + "/" + str(stderr_goal))
-			if stderr_goal < stderr:
+		try:
+			if 'relative_stderr' not in self.options:
 				return False
-		return True
+			sums = None
+			for i in self.data['runs']:
+				value_list = result_list(i['results'])
+				if sums == None:
+					sums = []
+					for i in range(0, len(value_list)):
+						sums.append([])
+				for v in range(0, len(value_list)):
+					sums[v].append(value_list[v])
+			for i in sums:
+				avg = sum(i)/len(i)
+				stderr_goal = self.options['relative_stderr'] * avg
+				stderr = calc_stderr(i)
+				logging.debug("Stderr: " + str(stderr) + "/" + str(stderr_goal))
+				if stderr_goal < stderr:
+					return False
+			return True
+		except:
+			# This is a situation, where the number of results varies
+			# which is not handled at the moment
+			# TODO
+			return True
 
 
 	def run(self):
