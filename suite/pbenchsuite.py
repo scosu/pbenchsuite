@@ -70,6 +70,12 @@ class monitor_proc:
 		while self.stop_rec == True:
 			time.sleep(0.1)
 
+def dir_create(path):
+	try:
+		os.mkdir(path)
+	except:
+		return
+
 class pbenchsuite:
 	data = {}
 	base_path = ""
@@ -81,7 +87,7 @@ class pbenchsuite:
 	benchsuites_path = ""
 
 	def init_dir(self, path):
-		os.makedirs(path)
+		dir_create(path)
 		return path
 
 	def __init__(self, base_path = None):
@@ -89,20 +95,20 @@ class pbenchsuite:
 			base_path = os.getcwd()
 		self.base_path = base_path
 		self.monitors_path = os.path.join(base_path, 'monitors')
-		os.makedirs(self.monitors_path, exist_ok = True)
+		dir_create(self.monitors_path)
 		sys.path.insert(0, self.monitors_path)
 		self.benchs_path = os.path.join(base_path, 'benchmarks')
-		os.makedirs(self.benchs_path, exist_ok = True)
+		dir_create(self.benchs_path)
 		self.results_path = os.path.join(base_path, 'results')
-		os.makedirs(self.results_path, exist_ok = True)
+		dir_create(self.results_path)
 		self.state_path = os.path.join(base_path, 'state')
-		os.makedirs(self.state_path, exist_ok = True)
+		dir_create(self.state_path)
 		self.state_mon_installed_path = os.path.join(self.state_path, 'monitors_installed')
-		os.makedirs(self.state_mon_installed_path, exist_ok = True)
+		dir_create(self.state_mon_installed_path)
 		self.state_bench_installed_path = os.path.join(self.state_path, 'benchs_installed')
-		os.makedirs(self.state_bench_installed_path, exist_ok = True)
+		dir_create(self.state_bench_installed_path)
 		self.benchsuites_path = os.path.join(base_path, 'benchsuites')
-		os.makedirs(self.benchsuites_path, exist_ok = True)
+		dir_create(self.benchsuites_path)
 
 		self.benchsuites = []
 		self.monitors = {}
@@ -501,7 +507,7 @@ class benchsuite:
 		self.monitors = {}
 		self.data = {}
 		self.results_path = os.path.join(psuite.results_path, runname)
-		os.makedirs(self.results_path, exist_ok = True)
+		dir_create(self.results_path)
 		logging.debug("Constructing benchsuite " + self.name + " with config file " + path)
 
 		conf = configparser.RawConfigParser()
