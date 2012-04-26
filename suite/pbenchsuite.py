@@ -454,10 +454,10 @@ class benchinstance:
 		for i in range(0, self.options['warmup_runs']):
 			logging.info("Warmup Run " + str(i+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
-			if last_run['returncode'] != 0:
+			if self.last_run['returncode'] != 0:
 				self.store_run_data()
 				self.data['failure'] = 1
-				return last_run['returncode']
+				return self.last_run['returncode']
 		self.data['warmup_time'] = time.time() - start_time
 		runs = 0
 		start_time = time.time()
@@ -465,9 +465,9 @@ class benchinstance:
 			logging.info("Run " + str(runs+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
 			self.store_run_data()
-			if last_run['returncode'] != 0:
+			if self.last_run['returncode'] != 0:
 				self.data['failure'] = 1
-				return last_run['returncode']
+				return self.last_run['returncode']
 
 			runs += 1
 			now = time.time()
