@@ -496,6 +496,7 @@ class benchinstance:
 				logging.debug("stderr reached, abort")
 				break
 		self.data['runtime'] = time.time() - start_time
+		return 0
 
 	def store_runs_to_file(self):
 		logging.debug("Storing to file " + self.result_file)
