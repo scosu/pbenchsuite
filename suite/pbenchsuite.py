@@ -553,7 +553,10 @@ class benchsuite:
 
 	def run(self):
 		self.data['run_start'] = time.time()
+		num = 1
 		for instance in self.benchinstances:
+			logging.info("Benchsuite " + self.name + " starting benchinstance " + instance.name + ' ' + str(num) + "/" + str(len(self.benchinstances)))
+			num += 1
 			failed = instance.run()
 			instance.store_runs_to_file()
 			if failed != 0:
