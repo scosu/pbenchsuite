@@ -462,17 +462,16 @@ class benchinstance:
 				self.data['failure'] = 1
 				return self.last_run['returncode']
 		self.data['warmup_time'] = time.time() - start_time
-		runs = 0
+		runs = 1
 		start_time = time.time()
 		while True:
-			logging.info("Run " + str(runs+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
+			logging.info("Run " + str(runs) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
 			self.store_run_data()
 			if self.last_run['returncode'] != 0:
 				self.data['failure'] = 1
 				return self.last_run['returncode']
 
-			runs += 1
 			now = time.time()
 			if self.options['min_runs'] > runs:
 				logging.debug("min_runs not reached")
@@ -489,12 +488,13 @@ class benchinstance:
 			if 'relative_max_runs' in self.options and self.options['relative_max_runs'] < runs:
 				logging.debug("relative_max_runs reached, abort")
 				break
-			if 'max_runs' in self.options and self.options['max_runs'] < runs:
+			if 'max_runs' in self.options and self.options['max_runs'] <= runs:
 				logging.debug("max_runs reached, abort")
 				break
 			if self.stderr_okay():
 				logging.debug("stderr reached, abort")
 				break
+			runs += 1
 		self.data['runtime'] = time.time() - start_time
 
 	def store_runs_to_file(self):
