@@ -5,7 +5,7 @@ import time
 def check_requirements():
 	return []
 def install():
-	return True
+	return 0
 def pre():
 	return 0
 

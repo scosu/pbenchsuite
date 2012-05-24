@@ -70,7 +70,7 @@ monitors = mon_memory
 # All options in a benchinstance section are optional.
 [dummyname]
 # If bench is not defined, the section name is used as bench identifier.
-bench = dummy
+benchmark = dummy
 
 # All args options will overwrite the settings of the bench's config file.
 # pre_args is a list of comma-seperated arguments for the pre script.
@@ -92,5 +92,5 @@ args = +%s
 
 
 [dummybench2]
-bench = dummy
+benchmark = dummy
 args = +%s

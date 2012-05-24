@@ -4,29 +4,15 @@
 import sys
 import os
 import time
-import csv
-import numpy
 import math
 import threading
 import configparser
 import subprocess
 import signal
-import shutil
 import logging
 import argparse
 import json
 
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
-
-monitors = {}
-monitor_data = {}
-recording = False
-
-benchs = {}
-
-install_state_dir = os.path.join('monitors', '.install_state')
-
-dev_null = open("/dev/null", "w")
 
 class monitor:
 	def __init__(self, name):
@@ -65,7 +51,8 @@ class monitor_proc:
 		self.stop_rec = False
 	def sleep_remaining(self, start, sleep):
 		remain = sleep - (time.time() - start)
-		time.sleep(remain)
+		if remain > 0:
+			time.sleep(remain)
 
 	def __call__(self):
 		start = time.time()
@@ -83,6 +70,12 @@ class monitor_proc:
 		while self.stop_rec == True:
 			time.sleep(0.1)
 
+def dir_create(path):
+	try:
+		os.mkdir(path)
+	except:
+		return
+
 class pbenchsuite:
 	data = {}
 	base_path = ""
@@ -94,7 +87,7 @@ class pbenchsuite:
 	benchsuites_path = ""
 
 	def init_dir(self, path):
-		os.makedirs(path)
+		dir_create(path)
 		return path
 
 	def __init__(self, base_path = None):
@@ -102,20 +95,20 @@ class pbenchsuite:
 			base_path = os.getcwd()
 		self.base_path = base_path
 		self.monitors_path = os.path.join(base_path, 'monitors')
-		os.makedirs(self.monitors_path, exist_ok = True)
+		dir_create(self.monitors_path)
 		sys.path.insert(0, self.monitors_path)
 		self.benchs_path = os.path.join(base_path, 'benchmarks')
-		os.makedirs(self.benchs_path, exist_ok = True)
+		dir_create(self.benchs_path)
 		self.results_path = os.path.join(base_path, 'results')
-		os.makedirs(self.results_path, exist_ok = True)
+		dir_create(self.results_path)
 		self.state_path = os.path.join(base_path, 'state')
-		os.makedirs(self.state_path, exist_ok = True)
+		dir_create(self.state_path)
 		self.state_mon_installed_path = os.path.join(self.state_path, 'monitors_installed')
-		os.makedirs(self.state_mon_installed_path, exist_ok = True)
+		dir_create(self.state_mon_installed_path)
 		self.state_bench_installed_path = os.path.join(self.state_path, 'benchs_installed')
-		os.makedirs(self.state_bench_installed_path, exist_ok = True)
+		dir_create(self.state_bench_installed_path)
 		self.benchsuites_path = os.path.join(base_path, 'benchsuites')
-		os.makedirs(self.benchsuites_path, exist_ok = True)
+		dir_create(self.benchsuites_path)
 
 		self.benchsuites = []
 		self.monitors = {}
@@ -155,9 +148,8 @@ class pbenchsuite:
 		self.data['kernal'] = execute_cmd(['uname', '-a'])
 
 	def get_monitor(self, mon):
-		if mon in self.monitors:
-			return self.monitors[mon]
-		self.monitors[mon] = monitor(mon)
+		if mon not in self.monitors:
+			self.monitors[mon] = monitor(mon)
 		return self.monitors[mon]
 
 	def add_benchsuite(self, path, runname):
@@ -241,11 +233,11 @@ def run_limit_options(config, section):
 
 def execute_cmd(cmd):
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	p.wait()
+	stdo, stde = p.communicate()
 	result = {
 		'returncode': p.returncode,
-		'stdout': p.stdout.read().decode(),
-		'stderr': p.stderr.read().decode()}
+		'stdout': stdo.decode(),
+		'stderr': stde.decode()}
 	return result
 
 
@@ -288,6 +280,7 @@ class bench:
 		inst_state = os.path.join(self.psuite.state_bench_installed_path, self.name)
 		if os.path.isfile(inst_state):
 			return 0
+		os.chdir(self.bench_path)
 		installation = execute_cmd([inst_path])
 		if installation['returncode'] != 0:
 			logging.critical("Benchmark " + self.name + " failed installing. Stderr:")
@@ -359,9 +352,16 @@ def result_list(d):
 			results += result_list(i)
 	return results
 
+def calc_variance(values):
+	avg = sum(values)/len(values)
+	sumsqr = 0.0
+	for i in values:
+		sumsqr += (avg - i)**2
+	return sumsqr / len(values)
+
 # calculate the standard error, not standard deviation
 def calc_stderr(values):
-	return math.sqrt(numpy.var(values)) / math.sqrt(float(len(values)))
+	return math.sqrt(calc_variance(values)) / math.sqrt(float(len(values)))
 
 class benchinstance:
 	def __init__(self, bench, config, sect, suite):
@@ -412,12 +412,13 @@ class benchinstance:
 		self.last_run = self.bench.run(args = self.options['args'])
 		mon_proc.stop()
 		self.bench.post(args = self.options['post_args'])
-		logging.info("Last run:")
-		logging.info(self.last_run)
 
 	def store_run_data(self):
 		last = self.last_run
-		last['results'] = json.loads(last['stdout'])
+		try:
+			last['results'] = json.loads(last['stdout'])
+		except:
+			last['results'] = {"failure": 1}
 		del last['stdout']
 		last['monitors'] = {}
 		for k,v in self.monitors.items():
@@ -425,23 +426,31 @@ class benchinstance:
 		self.data['runs'].append(last)
 
 	def stderr_okay(self):
-		sums = None
-		for i in self.data['runs']:
-			value_list = result_list(i['results'])
-			if sums == None:
-				sums = []
-				for i in range(0, len(value_list)):
-					sums.append([])
-			for v in range(0, len(value_list)):
-				sums[v].append(value_list[v])
-		for i in sums:
-			avg = sum(i)/len(i)
-			stderr_goal = self.options['relative_stderr'] * avg
-			stderr = calc_stderr(i)
-			logging.debug("Stderr: " + str(stderr) + "/" + str(stderr_goal))
-			if stderr_goal < stderr:
+		try:
+			if 'relative_stderr' not in self.options:
 				return False
-		return True
+			sums = None
+			for i in self.data['runs']:
+				value_list = result_list(i['results'])
+				if sums == None:
+					sums = []
+					for i in range(0, len(value_list)):
+						sums.append([])
+				for v in range(0, len(value_list)):
+					sums[v].append(value_list[v])
+			for i in sums:
+				avg = sum(i)/len(i)
+				stderr_goal = self.options['relative_stderr'] * avg
+				stderr = calc_stderr(i)
+				logging.debug("Stderr: " + str(stderr) + "/" + str(stderr_goal))
+				if stderr_goal < stderr:
+					return False
+			return True
+		except:
+			# This is a situation, where the number of results varies
+			# which is not handled at the moment
+			# TODO
+			return False
 
 
 	def run(self):
@@ -451,15 +460,22 @@ class benchinstance:
 		for i in range(0, self.options['warmup_runs']):
 			logging.info("Warmup Run " + str(i+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
+			if self.last_run['returncode'] != 0:
+				self.store_run_data()
+				self.data['failure'] = 1
+				return self.last_run['returncode']
 		self.data['warmup_time'] = time.time() - start_time
 		runs = 0
 		start_time = time.time()
 		while True:
-			logging.info("Run " + str(runs+1) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
+			runs += 1
+			logging.info("Run " + str(runs) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
 			self.store_run_data()
+			if self.last_run['returncode'] != 0:
+				self.data['failure'] = 1
+				return self.last_run['returncode']
 
-			runs += 1
 			now = time.time()
 			if self.options['min_runs'] > runs:
 				logging.debug("min_runs not reached")
@@ -470,19 +486,20 @@ class benchinstance:
 			if self.options['relative_min_runs'] > runs:
 				logging.debug("relative_min_runs not reached")
 				continue
-			if self.options['max_runtime'] < now - start_time:
+			if 'max_runtime' in self.options and self.options['max_runtime'] < now - start_time:
 				logging.debug("max_runtime reached, abort")
 				break
 			if 'relative_max_runs' in self.options and self.options['relative_max_runs'] < runs:
 				logging.debug("relative_max_runs reached, abort")
 				break
-			if 'max_runs' in self.options and self.options['max_runs'] < runs:
+			if 'max_runs' in self.options and self.options['max_runs'] <= runs:
 				logging.debug("max_runs reached, abort")
 				break
 			if self.stderr_okay():
 				logging.debug("stderr reached, abort")
 				break
 		self.data['runtime'] = time.time() - start_time
+		return 0
 
 	def store_runs_to_file(self):
 		logging.debug("Storing to file " + self.result_file)
@@ -493,7 +510,7 @@ class benchinstance:
 		self.data['options'] = self.options
 		all_data['instance'] = self.data
 		logging.debug("Storing data of instance " + self.name + " to file " + self.result_file + " (size: " + str(sys.getsizeof(all_data)) + ")")
-		json.dump(all_data, f, indent=2, sort_keys=True)
+		json.dump(all_data, f)
 		f.close()
 		self.data = {}
 
@@ -508,7 +525,7 @@ class benchsuite:
 		self.monitors = {}
 		self.data = {}
 		self.results_path = os.path.join(psuite.results_path, runname)
-		os.makedirs(self.results_path, exist_ok = True)
+		dir_create(self.results_path)
 		logging.debug("Constructing benchsuite " + self.name + " with config file " + path)
 
 		conf = configparser.RawConfigParser()
@@ -530,8 +547,8 @@ class benchsuite:
 			if sect == 'general':
 				continue
 			benchid = sect
-			if conf.has_option(sect, 'bench'):
-				benchid = conf.get(sect, 'bench')
+			if conf.has_option(sect, 'benchmark'):
+				benchid = conf.get(sect, 'benchmark')
 			if benchid not in psuite.loaded_benchs:
 				tmp = bench(psuite, benchid)
 				psuite.loaded_benchs[benchid] = tmp
@@ -540,9 +557,15 @@ class benchsuite:
 
 	def run(self):
 		self.data['run_start'] = time.time()
+		num = 1
 		for instance in self.benchinstances:
-			instance.run()
+			logging.info("Benchsuite " + self.name + " starting benchinstance " + instance.name + ' ' + str(num) + "/" + str(len(self.benchinstances)))
+			num += 1
+			failed = instance.run()
 			instance.store_runs_to_file()
+			if failed != 0:
+				logging.error("Bench instance failed to run: " + instance.name)
+				self.failed_benchs.append(instance.name)
 		self.data['run_end'] = time.time()
 
 	def to_dict(self):
@@ -564,29 +587,35 @@ def sig_dummy(x, y):
 signal.signal(signal.SIGUSR1, sig_dummy)
 signal.signal(signal.SIGUSR2, sig_dummy)
 
+if __name__ == '__main__':
 
-parser = argparse.ArgumentParser(description='PBenchSuite')
-parser.add_argument('suites', metavar='<SUITE>:<RUNNAME>', type=str, nargs='+', help='Suite name or path followed by the runname (The directory inside results where all results should be stored)')
-args = parser.parse_args()
+	logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
 
-psuite = pbenchsuite()
+	parser = argparse.ArgumentParser(description='PBenchSuite')
+	parser.add_argument('suites', metavar='<SUITE>:<RUNNAME>', type=str, nargs='+', help='Suite name or path followed by the runname (The directory inside results where all results should be stored)')
+	parser.add_argument('-i', '--install', dest='install_only', action='store_true', default=False, help='Only install the necessary tests')
+	args = parser.parse_args()
 
-for argstr in args.suites:
-	arg = argstr.split(':')
-	if len(arg) != 2:
-		print("ERROR: Failed to parse '" + argstr + "' correctly. Please read the help for information about the format")
+	psuite = pbenchsuite()
+
+	for argstr in args.suites:
+		arg = argstr.split(':')
+		if len(arg) != 2:
+			print("ERROR: Failed to parse '" + argstr + "' correctly. Please read the help for information about the format")
+			sys.exit(1)
+		status = psuite.add_benchsuite(arg[0], arg[1])
+		if status != 0:
+			print("ERROR: Failed to add a benchsuite. Aborting")
+			sys.exit(1)
+
+	s = psuite.check_requirements()
+	if s != 0:
+		print("ERROR: Missing requirements. Aborting")
 		sys.exit(1)
-	status = psuite.add_benchsuite(arg[0], arg[1])
-	if status != 0:
-		print("ERROR: Failed to add a benchsuite. Aborting")
+	s = psuite.install()
+	if s != 0:
+		print("ERROR: Installation failed. Aborting")
 		sys.exit(1)
-
-s = psuite.check_requirements()
-if s != 0:
-	print("ERROR: Missing requirements. Aborting")
-	sys.exit(1)
-s = psuite.install()
-if s != 0:
-	print("ERROR: Installation failed. Aborting")
-	sys.exit(1)
-psuite.run()
+	if args.install_only:
+		sys.exit(0)
+	psuite.run()

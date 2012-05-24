@@ -3,16 +3,19 @@
 import time
 import subprocess
 import os
+import json
 
 cmd = ['bzip2', '-c', 'testfile']
+
+data = {}
 
 bzip2 = open('tmp/testfile.bz2', 'w')
 
 start = time.time()
 p = subprocess.Popen(cmd, stdout=bzip2)
-p.wait()
+stdo, stde = p.communicate()
 end = time.time()
-compress = end - start
+data['compress'] = end - start
 
 bzip2.close()
 
@@ -21,9 +24,9 @@ os.chdir('tmp')
 cmd = ['bunzip2', 'testfile.bz2']
 start = time.time()
 p = subprocess.Popen(cmd)
-p.wait()
+stdo, stde = p.communicate()
 end = time.time()
-decompress = end - start
+data['decompress'] = end - start
 
-print(str(compress) + ',' + str(decompress))
+print(json.dumps(data))
 

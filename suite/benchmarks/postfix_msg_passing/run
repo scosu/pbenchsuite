@@ -3,6 +3,7 @@
 import subprocess
 import time
 import sys
+import json
 
 
 f = open('/proc/cpuinfo', 'r')
@@ -18,8 +19,8 @@ num_procs *= 4
 
 def exec_path(execu):
 	p = subprocess.Popen(['whereis', '-b', execu], stdout=subprocess.PIPE)
-	p.wait()
-	return p.stdout.read().decode().split()[1]
+	stdo, stde = p.communicate()
+	return stdo.decode().split()[1]
 
 n = open('/dev/null', 'w')
 
@@ -36,6 +37,6 @@ start = time.time()
 client = subprocess.Popen(cmd)
 client.wait()
 end = time.time()
-print(end - start)
+print(json.dumps({'runtime': (end - start)}))
 server.kill()
 

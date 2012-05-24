@@ -1,3 +1,0 @@
-#!/bin/bash
-
-echo "num_sort_iter,string_sort_iter,bitfield_iter,fp_emul_iter,fourier_iter,assign_iter,idea_iter,huffman_iter,neural_net_iter,lu_decomposition_iter"

@@ -2,16 +2,18 @@
 
 import os
 import subprocess
+import json
 
 os.chdir('nbench')
 cmd = ['./nbench']
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-p.wait()
+stdo, stde = p.communicate()
 
 
 try_match = 0
 results = []
-for i in p.stdout.read().decode().splitlines():
+data = {}
+for i in stdo.decode().splitlines():
 	if try_match == 0:
 		if i.startswith('--------------'):
 			try_match = 1
@@ -19,5 +21,5 @@ for i in p.stdout.read().decode().splitlines():
 	if i.startswith('================'):
 		break
 	fields = [n.strip() for n in i.split(':')]
-	results.append(fields[1])
-print(','.join(results))
+	data[fields[0]] = float(fields[1])
+print(json.dumps(data))

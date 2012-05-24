@@ -3,16 +3,19 @@
 import time
 import subprocess
 import os
+import json
 
 cmd = ['7z', 'a', 'tmp/testfile.7z', 'testfile']
 
 n = open('/dev/null', 'w')
 
+data = {}
+
 start = time.time()
 p = subprocess.Popen(cmd, stdout=n)
 p.wait()
 end = time.time()
-compress = end - start
+data['compress'] = end - start
 
 os.chdir('tmp')
 
@@ -21,9 +24,9 @@ start = time.time()
 p = subprocess.Popen(cmd, stdout=n)
 p.wait()
 end = time.time()
-decompress = end - start
+data['decompress'] = end - start
 
 n.close()
 
-print(str(compress) + ',' + str(decompress))
+print(json.dumps(data))
 

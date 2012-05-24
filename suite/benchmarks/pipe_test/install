@@ -1,8 +1,0 @@
-#!/bin/bash
-
-gcc -o pipe-test pipe-test.c
-
-if [ $? -eq 0 ]
-then
-	touch .installed
-fi

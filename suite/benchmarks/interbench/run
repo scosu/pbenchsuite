@@ -2,6 +2,7 @@
 
 import subprocess
 import re
+import json
 
 f = open('/proc/cpuinfo', 'r')
 procs = f.read()
@@ -12,27 +13,40 @@ for i in procs.splitlines():
 		num_procs += 1
 
 cmd = ['./interbench', '-L', str(num_procs*2), '-c']
-p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-p.wait()
-data = p.stdout.read().decode()
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+stdo, stde = p.communicate()
+stdo = stdo.decode()
 results = []
-for line in data.splitlines():
+current_workload = ""
+data = {}
+for line in stdo.splitlines():
 	if line.strip() == '':
 		continue
 	if line.startswith('---'):
+		m = re.match('.*cpu of (.+) in the.*', line)
+		if m == None:
+			continue
+		current_workload = m.group(1)
+		data[current_workload] = {}
 		continue
 	if line.startswith('Load'):
 		continue
-	m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*', line)
-	if m == None:
-		m = re.match('.*\w+\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*', line)
-		if m == None:
-			continue
-		results.append(m.group(1))
-		results.append(m.group(3))
+	if current_workload == "":
+		continue
+	if current_workload != 'Gaming':
+		m = re.match('(\w+)\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*', line)
+		data[current_workload][m.group(1)] = {
+			'latency': float(m.group(2)),
+			'latency_sd': float(m.group(3)),
+			'max_latency': float(m.group(4)),
+			'deadlines_met': float(m.group(6))
+		}
 	else:
-		results.append(m.group(1))
-		results.append(m.group(3))
-		results.append(m.group(5))
-print(','.join(results))
+		m = re.match('(\w+)\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*', line)
+		data[current_workload][m.group(1)] = {
+			'latency': float(m.group(2)),
+			'latency_sd': float(m.group(3)),
+			'max_latency': float(m.group(4))
+		}
+print(json.dumps(data, indent=4))
 

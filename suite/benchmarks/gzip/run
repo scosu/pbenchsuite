@@ -3,16 +3,19 @@
 import time
 import subprocess
 import os
+import json
 
 cmd = ['gzip', '-c', 'testfile']
+
+data = {}
 
 gzip = open('tmp/testfile.gz', 'w')
 
 start = time.time()
 p = subprocess.Popen(cmd, stdout=gzip)
-p.wait()
+stdo, stde = p.communicate()
 end = time.time()
-compress = end - start
+data['compress'] = end - start
 
 gzip.close()
 
@@ -21,9 +24,8 @@ os.chdir('tmp')
 cmd = ['gzip', '-d', 'testfile.gz']
 start = time.time()
 p = subprocess.Popen(cmd)
-p.wait()
+stdo, stde = p.communicate()
 end = time.time()
-decompress = end - start
+data['decompress'] = end - start
 
-print(str(compress) + ',' + str(decompress))
-
+print(json.dumps(data))

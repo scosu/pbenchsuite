@@ -3,15 +3,11 @@
 import sys
 import subprocess
 import signal
-import numpy
-import math
+import json
 
 if len(sys.argv) != 3:
 	print("USAGE: num_proc time")
 	sys.exit(1)
-
-def calc_stderr(values):
-	return math.sqrt(numpy.var(values)) / math.sqrt(float(len(values)))
 
 def dummy(n,x):
 	return
@@ -22,10 +18,10 @@ cmd.append(sys.argv[1])
 cmd.append(sys.argv[2])
 
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-p.wait()
-data = p.stdout.read().decode()
+stdo, stde = p.communicate()
+data = stdo.decode()
 cycles = []
 for i in data.splitlines():
 	cycles.append(int(i.split()[1]))
 
-print(str(float(sum(cycles)) / len(cycles)) + ',' + str(calc_stderr(cycles)))
+print(json.dumps({'cycles': cycles}))

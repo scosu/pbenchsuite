@@ -2,8 +2,3 @@
 
 gcc -o yield yield.c -lpthread
 
-if [ $? -eq 0 ]
-then
-	touch .installed
-fi
-

@@ -4,12 +4,4 @@ tar -xf UnixBench5.1.3.tgz
 cd UnixBench
 make
 
-if [ $? -eq 0 ]
-then
-	touch ../.installed
-fi
-
-
-
-
 

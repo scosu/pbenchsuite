@@ -4,6 +4,7 @@ import subprocess
 import sys
 import re
 import os
+import json
 
 f = open('/proc/cpuinfo', 'r')
 procs = f.read()
@@ -27,17 +28,21 @@ else:
 cmd.append(sys.argv[2])
 os.chdir('UnixBench')
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-p.wait()
+stdo, stde = p.communicate()
 
 try_match = 0
-results = []
-for i in p.stdout.read().decode().splitlines():
+data = {}
+for i in stdo.decode().splitlines():
 	if try_match == 0:
 		if i.startswith('Benchmark Run'):
 			try_match = 1
 		continue
 
-	m = re.match('.*\s+(\d+\.?\d*)\s+.*\(.*', i)
-	if m != None:
-		results.append(m.group(1))
-print(','.join(results))
+	m = re.match('(.*\S+)\s+(\d+\.?\d*)\s+(\S+)\s+\(.*', i)
+	if m == None:
+		continue
+	data[m.group(1)] = {
+		'value': float(m.group(2)),
+		'unit': m.group(3)
+	}
+print(json.dumps(data))

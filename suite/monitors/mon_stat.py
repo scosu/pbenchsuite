@@ -13,7 +13,7 @@ def check_requirements():
 		return ['/proc/stat']
 	return []
 def install():
-	return True
+	return 0
 
 def collect_data(cumulative_only=False):
 	f = open('/proc/stat', 'r')
@@ -44,6 +44,8 @@ def pre():
 def get():
 	results = collect_data()
 	for i in range(0, len(init)):
+		if results[i] < init[i]:
+			init[i] -= 2**64
 		results[i] -= init[i]
 	jsonr = {}
 	for i in range(0, len(init)):

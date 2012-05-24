@@ -3,6 +3,7 @@ import time
 import os
 import subprocess
 import sys
+import json
 
 f = open('/proc/cpuinfo', 'r')
 procs = f.read()
@@ -20,6 +21,7 @@ else:
 	cmd.append('30')
 	cmd.append(str(num_procs))
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-p.wait()
-print(p.stdout.read().decode().strip())
+stdo, stde = p.communicate()
+data = {'iterations': int(stdo.decode().strip())}
+print(json.dumps(data))
 
