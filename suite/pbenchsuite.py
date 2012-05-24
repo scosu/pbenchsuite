@@ -397,6 +397,9 @@ class benchinstance:
 				opts[i] = [n.strip() for n in config.get(sect, i).split(',')]
 			else:
 				opts[i] = None
+		opts['monitors'] = []
+		for i in self.monitors:
+			opts['monitors'].append(i.name)
 		self.options = opts
 		self.name = sect
 
@@ -442,7 +445,7 @@ class benchinstance:
 
 
 	def run(self):
-		self.data = {'monitors':{}, 'runs':[], 'name':self.name}
+		self.data = {'runs':[], 'name':self.name}
 		self.data['info'] = self.info
 		start_time = time.time()
 		for i in range(0, self.options['warmup_runs']):
