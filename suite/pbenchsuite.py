@@ -399,7 +399,7 @@ class benchinstance:
 				opts[i] = None
 		opts['monitors'] = []
 		for i in self.monitors:
-			opts['monitors'].append(i.name)
+			opts['monitors'].append(i)
 		self.options = opts
 		self.name = sect
 
