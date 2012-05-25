@@ -529,6 +529,7 @@ class benchsuite:
 		self.monitors = {}
 		self.data = {}
 		self.results_path = os.path.join(psuite.results_path, runname)
+		self.runname = runname
 		dir_create(self.results_path)
 		logging.debug("Constructing benchsuite " + self.name + " with config file " + path)
 
@@ -579,6 +580,7 @@ class benchsuite:
 			data['options'][k] = v
 		data['name'] = self.name
 		data['results_path'] = self.results_path
+		data['runname'] = self.runname
 		return data
 
 
