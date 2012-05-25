@@ -512,7 +512,7 @@ class benchinstance:
 		all_data['system'] = self.suite.psuite.to_dict()
 		self.data['options'] = self.options
 		all_data['instance'] = self.data
-		logging.debug("Storing data of instance " + self.name + " to file " + self.result_file + " (size: " + str(sys.getsizeof(all_data)) + ")")
+		logging.debug("Storing data of instance " + self.name + " to file " + self.result_file)
 		json.dump(all_data, f)
 		f.close()
 		self.data = {}
