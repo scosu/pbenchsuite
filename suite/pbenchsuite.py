@@ -121,10 +121,10 @@ class pbenchsuite:
 			'distribution': '/etc/issue',
 			'mtab': '/etc/mtab',
 			'fstab': '/etc/fstab'}
-		for i in sysinfo_files:
-			if os.path.exists(i):
-				f = open(i, 'r')
-				self.data[i] = f.read()
+		for k,v in sysinfo_files.items():
+			if os.path.exists(v):
+				f = open(v, 'r')
+				self.data[k] = f.read()
 				f.close()
 
 		i = 0
