@@ -146,6 +146,8 @@ class pbenchsuite:
 
 		self.data['modules'] = execute_cmd(['lsmod'])
 		self.data['kernal'] = execute_cmd(['uname', '-a'])
+	def to_dict(self):
+		return self.data
 
 	def get_monitor(self, mon):
 		if mon not in self.monitors:
@@ -507,6 +509,7 @@ class benchinstance:
 		all_data = {}
 		all_data['suite'] = self.suite.to_dict()
 		all_data['bench'] = self.bench.to_dict()
+		all_data['system'] = self.suite.psuite.to_dict()
 		self.data['options'] = self.options
 		all_data['instance'] = self.data
 		logging.debug("Storing data of instance " + self.name + " to file " + self.result_file + " (size: " + str(sys.getsizeof(all_data)) + ")")
@@ -520,6 +523,7 @@ class benchsuite:
 
 	def __init__(self, path, psuite, runname):
 		self.name = os.path.basename(path)
+		self.psuite = psuite
 		self.benchinstances = []
 		self.failed_benchs = []
 		self.monitors = {}
