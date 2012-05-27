@@ -3,6 +3,7 @@
 import argparse
 import sys
 import os
+import traceback
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--plotter', help='Plotter to plot the given data. For multiple plotters, add multiple -p arguments', dest='plotters', metavar='PLOTTER', action='append')
@@ -16,7 +17,7 @@ if parsed.plotters == None:
 	try:
 		plotters.append(('generic_plotter', __import__('generic_plotter')))
 	except:
-		print("Error: Couldn't find plotter " + i)
+		print("Error: Couldn't find plotter generic_plotter")
 		sys.exit(-1)
 else:
 	for i in parsed.plotters:
@@ -36,5 +37,6 @@ for i in plotters:
 	try:
 		i[1].plot_pathes(parsed.path, t)
 	except:
-		print("Plotter " + i[0] + " failed: " + str(sys.exc_info()[1]))
+		print("Plotter " + i[0] + " failed:")
+		traceback.print_exc()
 

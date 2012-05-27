@@ -34,16 +34,31 @@ def mean_confidence_interval(data, confidence=0.95):
 #
 # @return
 
-def _sort_keys(keys):
-	fkeys = []
-	skeys = []
-	for i in keys:
+def _arg_string_sort(a, b):
+	al = a.split(' ')
+	bl = b.split(' ')
+	l = min(len(al), len(bl))
+	for i in range(0, l):
 		try:
-			float(i)
-			fkeys.append(i)
+			if float(al[i]) < float(bl[i]):
+				return -1
+			if float(al[i]) > float(bl[i]):
+				return 1
+			continue
 		except:
-			skeys.append(i)
-	return sorted(fkeys, key=float) + sorted(skeys)
+			pass
+		if al[i] < bl[i]:
+			return -1
+		if al[i] > bl[i]:
+			return 1
+	if len(al) < len(bl):
+		return -1
+	if len(al) > len(bl):
+		return 1
+	return 0
+
+def _sort_keys(keys):
+	return sorted(keys, cmp=_arg_string_sort)
 
 def _plot_stuff(title = None, x_label = None, y_label = None, no_legend = False, max_x = None):
 	if title != None:
@@ -54,13 +69,14 @@ def _plot_stuff(title = None, x_label = None, y_label = None, no_legend = False,
 		plt.ylabel(y_label)
 	if not no_legend and max_x != None:
 		handles, labels = plt.gca().get_legend_handles_labels()
-		hl = sorted(zip(handles, labels), key=operator.itemgetter(1))
+		hl = sorted(zip(handles, labels), cmp=_arg_string_sort, key=operator.itemgetter(1))
 		handles, labels = zip(*hl)
 		max_label = 0
 		for k in labels:
 			max_label = max(len(k), max_label)
 		plt.xlim(xmax = max(max_x + 1, max_x * (1 + (max(0, max_label - 3)) * 0.06)))
 		plt.legend(handles, labels, loc='center right', bbox_to_anchor=(1.13, 0.5), fancybox=True, shadow=True)
+
 
 # Takes something like this:
 #data_line = {
@@ -73,12 +89,21 @@ def plot_line_chart(data, x_keys=None, title=None, y_label=None, x_label=None, n
 	global fmtsid
 	if fmts_arg == None:
 		fmts = [
-				{'color': 'b', 'linestyle': '-', 'marker': ','},
-				{'color': 'r', 'linestyle': '-', 'marker': '.'},
-				{'color': 'g', 'linestyle': '-', 'marker': '+'},
-				{'color': 'b', 'linestyle': '--', 'marker': 'o'},
-				{'color': 'c', 'linestyle': '--', 'marker': 'D'},
-				{'color': 'y', 'linestyle': '--', 'marker': '^'}]
+				{'color': 'b', 'linestyle': '-', 'marker': ' '},
+				{'color': 'g', 'linestyle': '-', 'marker': ' '},
+				{'color': 'r', 'linestyle': '-', 'marker': ' '},
+				{'color': 'c', 'linestyle': '-', 'marker': ' '},
+				{'color': 'm', 'linestyle': '-', 'marker': ' '},
+				{'color': 'y', 'linestyle': '-', 'marker': ' '},
+				{'color': 'b', 'linestyle': '--', 'marker': ' '},
+				{'color': 'g', 'linestyle': '--', 'marker': ' '},
+				{'color': 'r', 'linestyle': '--', 'marker': ' '},
+				{'color': 'c', 'linestyle': '--', 'marker': ' '},
+				{'color': 'm', 'linestyle': '--', 'marker': ' '},
+				{'color': 'y', 'linestyle': '--', 'marker': ' '},
+				{'color': '0.4', 'linestyle': '-', 'marker': ' '},
+				{'color': '0.4', 'linestyle': '--', 'marker': ' '},
+			]
 	else:
 		fmts = fmts_arg
 	fmtsid = 0

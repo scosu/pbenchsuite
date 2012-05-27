@@ -161,7 +161,7 @@ def plot_bench(bench):
 			for mk, mv in mondat.items():
 				for mk2, mv2 in mv.items():
 					dptr = monitor
-					cmpl_path = [mk] + path + [mk2, k]
+					cmpl_path = [mk, mk2] + path + [k]
 					for i in cmpl_path[:-1]:
 						if i not in dptr:
 							dptr[i] = {}
@@ -180,15 +180,32 @@ def plot_bench(bench):
 		plt.grid(axis='y')
 		plt.savefig(os.path.join(result_tgt, k + '.png'), dpi=200)
 		plt.clf()
-	def plot_mon(path, data):
+	def plot_mon(path, data, try_level_colapse=False):
 		plot_it = False
-		for k,v in data.items():
-			if isinstance(v, list):
+		level_colapse = False
+		if try_level_colapse and isinstance(data, dict) and isinstance(list(data.values())[0], dict) and isinstance(list(list(data.values())[0].values())[0], list):
+			max_l1 = len(data.keys())
+			max_l2 = 0
+			max_combos_to_plot = 15
+			for k,v in data.items():
+				max_l2 = max(max_l2, len(v.keys()))
+			if max_l1 * max_l2 < max_combos_to_plot:
 				plot_it = True
-				break
-			plot_mon(path + '_' + k, v)
+				level_colapse = True
+		if not plot_it:
+			for k,v in data.items():
+				if isinstance(v, list):
+					plot_it = True
+					break
+				plot_mon(path + '_' + k, v, try_level_colapse)
 		if not plot_it:
 			return
+		if level_colapse:
+			tmp = {}
+			for k,v in data.items():
+				for k2,v2 in v.items():
+					tmp[k+' '+k2] = v2
+			data = tmp
 		max_times = []
 		for k,v in data.items():
 			for ri in range(0, len(v)):
@@ -198,7 +215,7 @@ def plot_bench(bench):
 					row[i][0] -= starttime
 				if ri >= len(max_times):
 					max_times.append(0)
-				max_times[ri] = max(max_times[ri], row[-1][0])
+				max_times[ri] = max(max_times[ri], row[-1][0] + 1)
 		ct = 0
 		for i in range(0, len(max_times)):
 			tmp = ct
@@ -206,12 +223,14 @@ def plot_bench(bench):
 			max_times[i] = tmp
 		for k in data.keys():
 			tmp = []
-
 			for ri in range(0, len(data[k])):
 				row = data[k][ri]
+				if len(tmp) > 0:
+					tmp.append([tmp[-1][0]+1, row[0][1]])
 				for i in row:
 					tmp.append((i[0]+max_times[ri], i[1]))
 			data[k] = tmp
+			last_tmp = tmp
 		plot_utils.plot_line_chart(data)
 		plt.grid(axis='y')
 		plt.savefig(path + '.png', dpi=200)
@@ -222,7 +241,8 @@ def plot_bench(bench):
 		if not os.path.exists(t):
 			os.mkdir(t)
 		t = os.path.join(t, 'mon')
-		plot_mon(t, v)
+		plot_mon(t, v, try_level_colapse=True)
+		plot_mon(t, v, try_level_colapse=False)
 
 def plot_pathes(paths, storedir):
 	global store_dir
