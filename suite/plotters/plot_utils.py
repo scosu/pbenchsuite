@@ -170,9 +170,9 @@ def plot_line_chart(data, x_keys=None, title=None, y_label=None, x_label=None, n
 # @param data maximal 3 level depth of dictionary with lists of floats or floats
 # as lowest children. Lists will produce errorbars. The keys of the dictionary
 # are used to sort the stuff.
-# @param l1_keys
-# @param l2_keys
-# @param l3_keys
+# @param l1_keys Level 1 keys, this specifies the order
+# @param l2_keys Level 2 keys, this specifies the order
+# @param l3_keys Level 3 keys, this specifies the order
 # @param colors_arg
 # @param confidence_arg
 #

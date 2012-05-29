@@ -19,6 +19,8 @@ def filter_matcher(filtered_arg, args, no_regex = False):
 					break
 	return matched_filters == len(filtered_arg)
 
+# Match options against the given filters and monitors. Returns True if those are
+# matching
 def filter_options(options, pre_filters=None, filters=None, post_filters=None, monitors=None, no_regex=False):
 	matches = 0
 	if pre_filters == None:
@@ -52,6 +54,7 @@ def filter_options(options, pre_filters=None, filters=None, post_filters=None, m
 		return True
 	return False
 
+# Deep equality check of a and b, detects dict, list, str, float and int
 def deep_equal(a, b):
 	types = [dict, list, str, float, int]
 	for t in types:
@@ -74,22 +77,7 @@ def deep_equal(a, b):
 			return False
 	return True
 
-def arg_diff(a,b):
-	diff = []
-	for i in a:
-		if i in b:
-			continue
-		if i in diff:
-			continue
-		diff.append(i)
-	for i in b:
-		if i in a:
-			continue
-		if i in diff:
-			continue
-		diff.append(i)
-	return diff
-
+# add variation to the set of variations
 def _add_var_set(bigset, diff):
 	equal = False
 	for i in bigset:
@@ -99,6 +87,8 @@ def _add_var_set(bigset, diff):
 	if not equal:
 		bigset.append(diff)
 
+# Compare all arguments in args with all argumentlines in the argset.
+# Returns the argument parts that are not in the argset
 def get_args_not_in_set(args, argset):
 	diff = []
 	last_i = None
@@ -127,6 +117,7 @@ def get_args_not_in_set(args, argset):
 		ct += 1
 	return diff
 
+# Compute the argument variation in a list of argumentlists
 def arg_variation(argset):
 	pre_args = []
 	args = []
@@ -199,15 +190,21 @@ def arg_variation(argset):
 
 	return variations
 
+
+# loader simplifies the data loading from multiple files
 class loader:
 	def __init__(self):
 		self.data = {}
 		self.systems = {}
+
+	# get the benchmark name of a result file
 	def get_benchname(self, filepath):
 		f = open(filepath, 'r')
 		data = json.load(f)
 		f.close()
 		return data['bench']['name']
+
+	# get benchmark names of resultfiles in a directory
 	def get_benchnames_dir(self, directory):
 		result = set()
 		for dir_item in os.listdir(directory):
@@ -219,6 +216,8 @@ class loader:
 			except:
 				continue
 		return list(result)
+
+	# get benchmark names of resultfiles at the given pathes
 	def get_benchnames_pathes(self, pathes):
 		result = set()
 		for i in pathes:
@@ -232,6 +231,8 @@ class loader:
 			elif os.path.isdir(i):
 				result = result.union(self.get_benchnames_dir(i))
 		return list(result)
+
+	# Create a loader local system info table with runnames as identifiers
 	def _get_system(self, runname, sysinfo):
 		if runname in self.systems:
 			if deep_equal(sysinfo, self.systems[runname]):
@@ -241,6 +242,7 @@ class loader:
 		self.systems[runname] = sysinfo
 		return runname
 
+	# Load a file with the given filters
 	def load_file(self, f, only_benchs=None, only_instances=None, pre_filters=None, filters=None, post_filters=None, monitors=None):
 		try:
 			f = open(f, 'r')
@@ -281,12 +283,14 @@ class loader:
 		else:
 			print("Error: " + path + " is not a directory and not a file")
 			return False
+	# Load pathes
 	def load_pathes(self, pathes, only_benchs=None, only_instances=None):
 		success = True
 		for i in pathes:
 			s = self.load_path(i, only_benchs, only_instances)
 			success = s and success
 		return success
+	# get loaded data
 	def get_data(self):
 		return self.data
 

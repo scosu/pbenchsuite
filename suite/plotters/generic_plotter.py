@@ -5,6 +5,9 @@ import os
 import plot_utils
 import matplotlib.pyplot as plt
 import json
+import copy
+import cProfile
+import pstats
 
 args = []
 store_dir = ''
@@ -18,7 +21,7 @@ def generic_data_colapser(data):
 			if ret == None:
 				continue
 			if isinstance(ret, dict):
-				if len(ret.values()) > 1:
+				if len(ret) > 1:
 					for k2, v2 in ret.items():
 						result[k+k2] = v2
 				else:
@@ -46,7 +49,7 @@ def generic_data_colapser(data):
 				result[k] = sum(v)/len(v)
 		if len(rlist) > 0:
 			avg = sum(rlist) / len(rlist)
-			if len(result.keys()) > 0:
+			if len(result) > 0:
 				k = 'raw'
 				while k in result:
 					k += '_'
@@ -58,6 +61,14 @@ def generic_data_colapser(data):
 	else:
 		result = None
 	return result
+
+def _savefig(path):
+	path += '.png'
+	path = path.replace(' ', '_')
+	print(path)
+	plt.savefig(path, dpi=200)
+	plt.clf()
+
 
 def arg_to_filter(args):
 	filters = []
@@ -76,6 +87,8 @@ def plot_bench(bench):
 		os.mkdir(tgt)
 	loader = data_loader.loader()
 	loader.load_pathes(pathes, only_benchs=[bench])
+	# get the argvariations between all arguments. Use this to filter the
+	# data for the plots
 	args = loader.get_arg_variation(bench)
 	if len(args) > 0:
 		max_args_differ = 0
@@ -87,6 +100,7 @@ def plot_bench(bench):
 	max_args_differ = min(max_depth, max_args_differ)
 	data = {}
 	monitor = {}
+	# iterate through all detected arg combinations and gather the data and reformat it
 	for argsetting in args:
 		pre_args = argsetting[0]
 		args = argsetting[1]
@@ -96,10 +110,12 @@ def plot_bench(bench):
 		post_filters = arg_to_filter(post_args)
 		dat = loader.get_filtered_data(bench=bench, pre_filters=pre_filters, filters=filters, post_filters=post_filters, no_regex=True)
 		if dat == None:
-			print("Error: Didn't found data for the given args")
+			print("Error: Didn't find data for the given args")
 			continue
 		depth = 0
 		path = []
+		# create a hierarchy path for this argument combination, we have 3
+		# hierarchy level, the last one is used for the system, so 2 remaining
 		for i in argsetting[0] + argsetting[1] + argsetting[2]:
 			if depth >= max_depth:
 				if isinstance(i, list):
@@ -114,13 +130,15 @@ def plot_bench(bench):
 				path.append(i)
 		while len(path) < max_args_differ:
 			path.append('N/A')
-		if len(dat.values()) != 1:
+		if len(dat) != 1:
 			print("Error: we filtered " + str(len(dat.values())) + " instances instead of 1")
 			print("Filters:")
 			print(pre_args)
 			print(args)
 			print(post_args)
 			continue
+		# The first level in the dat dictionary holds the instancename,
+		# the previous check shows that this has only one element...
 		dat = list(dat.values())[0]
 		for k,v in dat.items():
 			r = {}
@@ -167,7 +185,7 @@ def plot_bench(bench):
 							dptr[i] = {}
 						dptr = dptr[i]
 					dptr[cmpl_path[-1]] = mv2
-#	print(json.dumps(monitor, indent=4))
+		dat = None
 	result_tgt = os.path.join(tgt, 'results')
 	if not os.path.exists(result_tgt):
 		os.mkdir(result_tgt)
@@ -178,17 +196,16 @@ def plot_bench(bench):
 		plot_utils.plot_bar_chart(v)
 		plt.title(bench + ' ' + k)
 		plt.grid(axis='y')
-		plt.savefig(os.path.join(result_tgt, k + '.png'), dpi=200)
-		plt.clf()
+		_savefig(os.path.join(result_tgt, k))
 	def plot_mon(path, data, try_level_colapse=False):
 		plot_it = False
 		level_colapse = False
 		if try_level_colapse and isinstance(data, dict) and isinstance(list(data.values())[0], dict) and isinstance(list(list(data.values())[0].values())[0], list):
-			max_l1 = len(data.keys())
+			max_l1 = len(data)
 			max_l2 = 0
 			max_combos_to_plot = 15
 			for k,v in data.items():
-				max_l2 = max(max_l2, len(v.keys()))
+				max_l2 = max(max_l2, len(v))
 			if max_l1 * max_l2 < max_combos_to_plot:
 				plot_it = True
 				level_colapse = True
@@ -206,6 +223,9 @@ def plot_bench(bench):
 				for k2,v2 in v.items():
 					tmp[k+' '+k2] = v2
 			data = tmp
+		else:
+			if try_level_colapse:
+				return
 		max_times = []
 		for k,v in data.items():
 			for ri in range(0, len(v)):
@@ -233,15 +253,14 @@ def plot_bench(bench):
 			last_tmp = tmp
 		plot_utils.plot_line_chart(data)
 		plt.grid(axis='y')
-		plt.savefig(path + '.png', dpi=200)
-		plt.clf()
+		_savefig(path)
 
 	for k,v in monitor.items():
 		t = os.path.join(monitor_tgt, k)
 		if not os.path.exists(t):
 			os.mkdir(t)
 		t = os.path.join(t, 'mon')
-		plot_mon(t, v, try_level_colapse=True)
+		plot_mon(t, copy.deepcopy(v), try_level_colapse=True)
 		plot_mon(t, v, try_level_colapse=False)
 
 def plot_pathes(paths, storedir):
@@ -256,5 +275,15 @@ def plot_pathes(paths, storedir):
 	for bench in benches:
 		plot_bench(bench)
 
+def profiling():
+	pathes = []
+	for i in [1,2,3,4,5,6,7,8,16,32,64,128]:
+		pathes.append('/mnt/local_storage/pbench/cfs3.4/kernel' + str(i) + ".json")
+	plot_pathes(pathes, '/tmp/test')
+
+
 if __name__ == '__main__':
-	plot_pathes(['/mnt/local_storage/pbench/cfs_test'], 'test')
+	cProfile.run('profiling()', 'stored_profiling')
+	p = pstats.Stats('stored_profiling')
+	p.sort_stats('time')
+	p.print_stats()
