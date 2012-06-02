@@ -250,13 +250,18 @@ def run_limit_options(config, section):
 	return options
 
 def execute_cmd(cmd):
-	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	stdo, stde = p.communicate()
-	result = {
-		'returncode': p.returncode,
-		'stdout': stdo.decode(),
-		'stderr': stde.decode()}
-	return result
+	try:
+		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		stdo, stde = p.communicate()
+		result = {
+			'returncode': p.returncode,
+			'stdout': stdo.decode(),
+			'stderr': stde.decode()}
+		return result
+	except:
+		return {'returncode': -1,
+			'stdout': '',
+			'stderr': ''}
 
 
 class bench:
