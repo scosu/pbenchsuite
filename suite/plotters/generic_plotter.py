@@ -25,6 +25,8 @@ import copy
 import cProfile
 import pstats
 
+monitor_plot_max_runs = 5
+
 args = []
 store_dir = ''
 pathes = []
@@ -259,7 +261,7 @@ def plot_bench(bench):
 			max_times[i] = tmp
 		for k in data.keys():
 			tmp = []
-			for ri in range(0, len(data[k])):
+			for ri in range(0, min(monitor_plot_max_runs, len(data[k]))):
 				row = data[k][ri]
 				if len(tmp) > 0:
 					tmp.append([tmp[-1][0]+1, row[0][1]])
