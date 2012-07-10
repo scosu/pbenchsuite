@@ -503,7 +503,7 @@ class benchinstance:
 			if self.options['min_runs'] > runs:
 				logging.debug("min_runs not reached")
 				continue
-			if self.options['min_runtime'] > now - start_time:
+			if 'min_runtime' in self.options and self.options['min_runtime'] > now - start_time:
 				logging.debug("min_runtime not reached")
 				continue
 			if self.options['relative_min_runs'] > runs:
