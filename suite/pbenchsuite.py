@@ -477,6 +477,10 @@ class benchinstance:
 
 
 	def run(self):
+		if args.continue and os.path.exists(self.result_file):
+			logging.debug("result file exists, skipping benchmark " + self.name)
+			return
+
 		self.data = {'runs':[], 'name':self.name}
 		self.data['info'] = self.info
 		start_time = time.time()
@@ -525,6 +529,8 @@ class benchinstance:
 		return 0
 
 	def store_runs_to_file(self):
+		if args.continue and os.path.exists(self.result_file):
+			return
 		logging.debug("Storing to file " + self.result_file)
 		f = open(self.result_file, 'w')
 		all_data = {}
@@ -621,6 +627,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='PBenchSuite')
 	parser.add_argument('suites', metavar='<SUITE>:<RUNNAME>', type=str, nargs='+', help='Suite name or path followed by the runname (The directory inside results where all results should be stored)')
 	parser.add_argument('-i', '--install', dest='install_only', action='store_true', default=False, help='Only install the necessary tests')
+	parser.add_argument('-c', '--continue', action='store_true', default=False, help='Continue benchsuite execution. Checks for existing results for RUNNAME.')
 	args = parser.parse_args()
 
 	psuite = pbenchsuite()
