@@ -479,7 +479,7 @@ class benchinstance:
 	def run(self):
 		if args.cont and os.path.exists(self.result_file):
 			logging.debug("result file exists, skipping benchmark " + self.name)
-			return
+			return 0
 
 		self.data = {'runs':[], 'name':self.name}
 		self.data['info'] = self.info
