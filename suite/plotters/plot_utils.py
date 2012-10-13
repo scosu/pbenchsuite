@@ -300,7 +300,7 @@ def plot_bar_chart(data, l1_keys=None, l2_keys=None, l3_keys=None, colors_arg=No
 						_plt_bar(x, l3_val, l3_key)
 
 					rot = min((len(l2_key) - 1)*30, 90)
-					plt.text(x, max_val*1.02, l2_key, horizontalalignment='center', verticalalignment='bottom', rotation=rot)
+					plt.text(x, max_val + max_overall * 0.02, l2_key, horizontalalignment='center', verticalalignment='bottom', rotation=rot)
 					x += 1
 			x += 1
 	if levels == 3:
