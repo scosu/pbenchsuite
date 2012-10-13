@@ -72,6 +72,16 @@ def filter_options(options, pre_filters=None, filters=None, post_filters=None, m
 		return True
 	return False
 
+def get_argument_value(args, option, bool_value=False):
+	for i in range(len(args)):
+		if args[i] == option:
+			if bool_value:
+				return True
+			if i + 1 >= len(args):
+				continue
+			return args[i+1]
+	return None
+
 # Deep equality check of a and b, detects dict, list, str, float and int
 def deep_equal(a, b):
 	types = [dict, list, str, float, int]
