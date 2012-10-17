@@ -438,15 +438,18 @@ class benchinstance:
 
 	def store_run_data(self):
 		last = self.last_run
+		error = False
 		try:
 			last['results'] = json.loads(last['stdout'])
 		except:
+			error = True
 			last['results'] = {"failure": 1}
 		del last['stdout']
 		last['monitors'] = {}
 		for k,v in self.monitors.items():
 			last['monitors'][k] = v.to_dict()
 		self.data['runs'].append(last)
+		return not error
 
 	def stderr_okay(self):
 		try:
@@ -498,8 +501,8 @@ class benchinstance:
 			runs += 1
 			logging.info("Run " + str(runs) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
-			self.store_run_data()
-			if self.last_run['returncode'] != 0:
+			ret = self.store_run_data()
+			if self.last_run['returncode'] != 0 || ret == False:
 				self.data['failure'] = 1
 				return self.last_run['returncode']
 
