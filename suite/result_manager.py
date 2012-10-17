@@ -20,6 +20,7 @@ import json
 import argparse
 import logging
 import re
+import os
 
 def create_char_dict(d):
 	if isinstance(d, int):
@@ -209,6 +210,29 @@ def cmd_copy(args):
 		dst.add(data)
 	dst.store()
 
+def rec_rename(pathes, old_name, new_name):
+	for path in pathes:
+		if os.path.isfile(path):
+			try:
+				data = json.load(open(path, 'r'))
+				if data['suite']['runname'] == old_name:
+					data['suite']['runname'] = new_name
+					json.dump(data, open(path, 'w'))
+					print('Renamed file ' + path)
+				else:
+					print('Not renaming file ' + path + '. Name does not match ' + data['suite']['runname'])
+			except:
+				print('Failed loading file ' + path + '. Perhaps this file is not a valid pbenchsuite result file.')
+				pass
+		elif os.path.isdir(path):
+			rec_rename([os.path.join(path, i) for i in os.listdir(path)], old_name, new_name)
+
+def cmd_rename(args):
+	new_name = args.new_name
+	old_name = args.old_name
+	pathes = args.pathes
+	rec_rename(pathes, old_name, new_name)
+
 def cmd_browse(args):
 	print('Result Browser. For available commands, type help()')
 	instance = instance_file(args.file[0])
@@ -352,6 +376,12 @@ if __name__ == '__main__':
 	parse_browse = parse_cmds.add_parser('browse', help='Browse the benchmark instance runs. You also can delete here')
 	parse_browse.add_argument('file', nargs=1, metavar='RESULT.json')
 	parse_browse.set_defaults(func=cmd_browse)
+
+	parse_rename = parse_cmds.add_parser('rename', help='Rename the testrun. (This does not move the file)')
+	parse_rename.add_argument('old_name')
+	parse_rename.add_argument('new_name')
+	parse_rename.add_argument('pathes', nargs='+')
+	parse_rename.set_defaults(func=cmd_rename)
 
 	parser.parse_args()
 	parsed = parser.parse_args()
