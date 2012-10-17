@@ -37,6 +37,6 @@ start = time.time()
 client = subprocess.Popen(cmd)
 client.wait()
 end = time.time()
-print(json.dumps({'runtime': (end - start)}))
+print(json.dumps({'runtime': {'value': (end - start), 'unit': 's', 'description': 'Runtime'}}))
 server.kill()
 

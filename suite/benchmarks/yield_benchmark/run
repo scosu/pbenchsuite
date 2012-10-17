@@ -22,6 +22,6 @@ else:
 	cmd.append(str(num_procs))
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 stdo, stde = p.communicate()
-data = {'iterations': int(stdo.decode().strip())}
+data = {'iterations': {'value': int(stdo.decode().strip()), 'unit': 'Iterations'}}
 print(json.dumps(data))
 

@@ -15,4 +15,4 @@ for i in range(0, forks):
 for i in ps:
 	i.wait()
 end = time.time()
-print(json.dumps({'runtime': (end - start - 5)}))
+print(json.dumps({'runtime': {'value': (end - start - 5), 'unit': 's', 'description': 'runtime'}}))

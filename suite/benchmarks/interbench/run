@@ -4,6 +4,9 @@ import subprocess
 import re
 import json
 
+def new_value(value, unit, description):
+	return {'value': value, 'unit': unit, 'description': description}
+
 f = open('/proc/cpuinfo', 'r')
 procs = f.read()
 f.close()
@@ -36,17 +39,17 @@ for line in stdo.splitlines():
 	if current_workload != 'Gaming':
 		m = re.match('(\w+)\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*', line)
 		data[current_workload][m.group(1)] = {
-			'latency': float(m.group(2)),
-			'latency_sd': float(m.group(3)),
-			'max_latency': float(m.group(4)),
-			'deadlines_met': float(m.group(6))
+			'latency': new_value(float(m.group(2)), 'ms', 'Latency'),
+			'latency_sd': new_value(float(m.group(3)), 'ms', 'Latency Standard Deviation'),
+			'max_latency': new_value(float(m.group(4)), 'ms', 'Max Latency'),
+			'deadlines': new_value(float(m.group(6)), '%', 'Deadlines Met')
 		}
 	else:
 		m = re.match('(\w+)\s+(\d+\.\d+)\s+\+/\-\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.?\d*)\s*', line)
 		data[current_workload][m.group(1)] = {
-			'latency': float(m.group(2)),
-			'latency_sd': float(m.group(3)),
-			'max_latency': float(m.group(4))
+			'latency': new_value(float(m.group(2)), 'ms', 'Latency'),
+			'latency_sd': new_value(float(m.group(3)), 'ms', 'Latency Standard Deviation'),
+			'max_latency': new_value(float(m.group(4)), 'ms', 'Max Latency')
 		}
 print(json.dumps(data, indent=4))
 

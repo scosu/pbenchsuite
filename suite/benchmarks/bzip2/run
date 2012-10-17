@@ -15,7 +15,7 @@ start = time.time()
 p = subprocess.Popen(cmd, stdout=bzip2)
 stdo, stde = p.communicate()
 end = time.time()
-data['compress'] = end - start
+data['compress'] = {'value': end - start, 'unit': 's', 'description': 'Runtime'}
 
 bzip2.close()
 
@@ -26,7 +26,7 @@ start = time.time()
 p = subprocess.Popen(cmd)
 stdo, stde = p.communicate()
 end = time.time()
-data['decompress'] = end - start
+data['decompress'] = {'value': end - start, 'unit': 's', 'description': 'Runtime'}
 
 print(json.dumps(data))
 

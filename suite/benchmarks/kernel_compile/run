@@ -30,7 +30,7 @@ data = {}
 start = time.time()
 p = subprocess.Popen(cmd, stdout=f, stderr=f)
 p.wait()
-data['runtime'] = time.time() - start
+data['runtime'] = {'value': time.time() - start, 'unit': 's', 'description': 'Compile time'}
 f.close()
 print(json.dumps(data))
 

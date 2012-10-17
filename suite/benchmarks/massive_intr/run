@@ -24,4 +24,4 @@ cycles = []
 for i in data.splitlines():
 	cycles.append(int(i.split()[1]))
 
-print(json.dumps({'cycles': cycles}))
+print(json.dumps({'cycles': {'value': cycles, 'description': 'Cycles'}}))

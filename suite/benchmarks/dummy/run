@@ -4,6 +4,8 @@
 # in this file, because the monitors are running and would record false data.
 # Return the results as a comma-seperated list of integers or floats. Do not
 # use multiple lines for the return values.
+#
+# Always set the fields 'value' 'unit' and 'description'
 echo "{ \"value\" :  "
 date $@
-echo "}"
+echo ", \"unit\": \"s\", \"description\": \"Time\"}"

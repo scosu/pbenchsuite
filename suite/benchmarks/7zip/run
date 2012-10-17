@@ -15,7 +15,7 @@ start = time.time()
 p = subprocess.Popen(cmd, stdout=n)
 p.wait()
 end = time.time()
-data['compress'] = end - start
+data['compress'] = {'value': end - start, 'unit': 's', 'description': 'Runtime'}
 
 os.chdir('tmp')
 
@@ -24,7 +24,7 @@ start = time.time()
 p = subprocess.Popen(cmd, stdout=n)
 p.wait()
 end = time.time()
-data['decompress'] = end - start
+data['decompress'] = {'value': end - start, 'unit': 's', 'description': 'Runtime'}
 
 n.close()
 
