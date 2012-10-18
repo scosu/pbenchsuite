@@ -31,9 +31,41 @@ args = []
 store_dir = ''
 pathes = []
 
+
+class value:
+	def __init__(self, json_data):
+		if 'value' in json_data:
+			self.value = json_data['value']
+		else:
+			self.value = -1
+		if 'unit' in json_data:
+			self.unit = json_data['unit']
+		else:
+			self.unit = None
+		if 'description' in json_data:
+			self.description = json_data['description']
+		else:
+			self.description = None
+
+	def get_ylabel(self):
+		print('unit:' + str(self.unit) + ' description:' + str(self.description))
+		if self.unit == None:
+			if self.description == None:
+				return ''
+			return self.description
+		if self.description != None:
+			return self.description + ' (' + self.unit + ')'
+		return self.unit
+
 def generic_data_colapser(data):
 	result = {}
 	if isinstance(data, dict):
+		if 'value' in data:
+			subvalue = generic_data_colapser(data['value'])
+			if isinstance(subvalue, value):
+				result = data
+				result['value'] = subvalue.value
+				return {'data': value(result)}
 		for k,v in data.items():
 			ret = generic_data_colapser(v)
 			if ret == None:
@@ -64,27 +96,35 @@ def generic_data_colapser(data):
 				rlist.append(ret)
 		for k,v in result.items():
 			if isinstance(v, list):
-				result[k] = sum(v)/len(v)
+				result[k].value = sum([val.value for val in v])/len(v)
 		if len(rlist) > 0:
-			avg = sum(rlist) / len(rlist)
+			avg = sum([val.value for val in rlist]) / len(rlist)
 			if len(result) > 0:
 				k = 'raw'
 				while k in result:
 					k += '_'
-				result[k] = avg
+				result[k] = rlist[0]
+				result[k].value = avg
 			else:
-				result = avg
+				result = rlist[0]
+				result.value = avg
 	elif isinstance(data, int) or isinstance(data, float):
-		result = data
+		result = value({'value': data})
 	else:
 		result = None
 	return result
 
+def _preplot():
+	fig = plt.figure()
+	fig.text(0.98, 0.0, 'Generated with pbenchsuite (http://pbenchsuite.allfex.org)', fontsize=10, color='gray', ha='right', va='bottom')
+
+
 def _savefig(path):
-	path += '.png'
 	path = path.replace(' ', '_')
-	print(path)
-	plt.savefig(path, dpi=200)
+	print(path + '.png')
+	plt.savefig(path + '.png', dpi=200)
+	print(path + '.svg')
+	plt.savefig(path + '.svg', dpi=200)
 	plt.clf()
 
 
@@ -117,6 +157,7 @@ def plot_bench(bench):
 	max_depth = 2
 	max_args_differ = min(max_depth, max_args_differ)
 	data = {}
+	data_ylabels = {}
 	monitor = {}
 	# iterate through all detected arg combinations and gather the data and reformat it
 	for argsetting in args:
@@ -167,19 +208,19 @@ def plot_bench(bench):
 					if tk not in r:
 						r[tk] = tv
 					else:
-						if isinstance(r[tk], list):
-							r[tk].append(tv)
+						if isinstance(r[tk].value, list):
+							r[tk].value.append(tv.value)
 						else:
-							r[tk] = [r[tk], tv]
+							r[tk].value = [r[tk].value, tv.value]
 				for monname, mon in run['monitors'].items():
 					row = {}
 					for m in mon['data']:
 						t = generic_data_colapser(m['values'])
 						for tk, tv in t.items():
 							if tk not in row:
-								row[tk] = [[m['time'], tv]]
+								row[tk] = [[m['time'], tv.value]]
 							else:
-								row[tk].append([m['time'], tv])
+								row[tk].append([m['time'], tv.value])
 					if monname not in mondat:
 						mondat[monname] = {}
 					for rk, rv in row.items():
@@ -193,7 +234,8 @@ def plot_bench(bench):
 					if i not in dptr:
 						dptr[i] = {}
 					dptr = dptr[i]
-				dptr[cmpl_path[-1]] = rv
+				dptr[cmpl_path[-1]] = rv.value
+				data_ylabels[rk] = rv.get_ylabel()
 			for mk, mv in mondat.items():
 				for mk2, mv2 in mv.items():
 					dptr = monitor
@@ -211,11 +253,13 @@ def plot_bench(bench):
 	if not os.path.exists(monitor_tgt):
 		os.mkdir(monitor_tgt)
 	for k,v in data.items():
+		_preplot()
 		plot_utils.plot_bar_chart(v)
 		plt.title(bench + ' ' + k)
 		plt.grid(axis='y')
+		plt.ylabel(data_ylabels[k])
 		_savefig(os.path.join(result_tgt, k))
-	def plot_mon(path, data, try_level_colapse=False):
+	def plot_mon(path, data, title, try_level_colapse=False):
 		plot_it = False
 		level_colapse = False
 		if try_level_colapse and isinstance(data, dict) and isinstance(list(data.values())[0], dict) and isinstance(list(list(data.values())[0].values())[0], list):
@@ -232,7 +276,7 @@ def plot_bench(bench):
 				if isinstance(v, list):
 					plot_it = True
 					break
-				plot_mon(path + '_' + k, v, try_level_colapse)
+				plot_mon(path + '_' + k, v, title + ' ' + k, try_level_colapse)
 		if not plot_it:
 			return
 		if level_colapse:
@@ -269,8 +313,10 @@ def plot_bench(bench):
 					tmp.append((i[0]+max_times[ri], i[1]))
 			data[k] = tmp
 			last_tmp = tmp
+		_preplot()
 		plot_utils.plot_line_chart(data)
 		plt.grid(axis='y')
+		plt.title(title)
 		_savefig(path)
 
 	for k,v in monitor.items():
@@ -278,8 +324,8 @@ def plot_bench(bench):
 		if not os.path.exists(t):
 			os.mkdir(t)
 		t = os.path.join(t, 'mon')
-		plot_mon(t, copy.deepcopy(v), try_level_colapse=True)
-		plot_mon(t, v, try_level_colapse=False)
+		plot_mon(t, copy.deepcopy(v), k, try_level_colapse=True)
+		plot_mon(t, v, k, try_level_colapse=False)
 
 def plot_pathes(paths, storedir):
 	global store_dir
