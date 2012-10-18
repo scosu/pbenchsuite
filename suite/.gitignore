@@ -1,6 +1,0 @@
-*.swp
-monitors/__pycache__
-monitors/.install_state
-results/
-state/
-*.pyc
