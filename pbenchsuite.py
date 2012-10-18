@@ -502,7 +502,7 @@ class benchinstance:
 			logging.info("Run " + str(runs) + " of bench instance " + self.name + " (bench " + self.bench.name + ")")
 			self.run_once()
 			ret = self.store_run_data()
-			if self.last_run['returncode'] != 0 || ret == False:
+			if self.last_run['returncode'] != 0 or ret == False:
 				self.data['failure'] = 1
 				return self.last_run['returncode']
 
