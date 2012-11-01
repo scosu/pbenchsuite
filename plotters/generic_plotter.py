@@ -32,6 +32,44 @@ store_dir = ''
 pathes = []
 
 
+def write_system_info(path, data):
+	if os.path.exists(path):
+		return
+	try:
+		os.mkdir(os.path.dirname(path))
+	except:
+		pass
+	data = data['system']
+	f = open(path, 'w')
+	f.write("CPU:\n")
+	f.write("--------------------------------------------------------\n")
+	f.write(data['cpuinfo'] + "\n")
+	f.write("CPU-Frequencies:\n")
+	f.write("--------------------------------------------------------\n")
+	for k,v in data['cpus'].items():
+		f.write(k + "\n")
+		f.write("Current frequency: " + v['cur'] + "\n")
+		f.write("Min frequency: " + v['min'] + "\n")
+		f.write("Max frequency: " + v['max'] + "\n")
+		f.write("Governor: " + v['governor'] + "\n")
+	f.write("\n")
+	f.write("System:\n")
+	f.write("--------------------------------------------------------\n")
+	f.write(data['kernal']['stdout'] + "\n")
+	f.write("Loaded Modules:\n")
+	f.write("--------------------------------------------------------\n")
+	f.write(data['modules']['stdout'] + "\n")
+	f.write("mtab:\n")
+	f.write("--------------------------------------------------------\n")
+	f.write(data['mtab'] + "\n")
+	f.write("fstab:\n")
+	f.write("--------------------------------------------------------\n")
+	f.write(data['fstab'] + "\n")
+	f.write("Distribution:\n")
+	f.write("--------------------------------------------------------\n")
+	f.write(data['distribution'] + "\n")
+	f.close()
+
 class value:
 	def __init__(self, json_data):
 		if 'value' in json_data:
@@ -48,7 +86,6 @@ class value:
 			self.description = None
 
 	def get_ylabel(self):
-		print('unit:' + str(self.unit) + ' description:' + str(self.description))
 		if self.unit == None:
 			if self.description == None:
 				return ''
@@ -199,9 +236,11 @@ def plot_bench(bench):
 		# The first level in the dat dictionary holds the instancename,
 		# the previous check shows that this has only one element...
 		dat = list(dat.values())[0]
+		sysinfo = {}
 		for k,v in dat.items():
 			r = {}
 			mondat = {}
+			write_system_info(os.path.join(tgt, 'system_info', k), v)
 			for run in v['instance']['runs']:
 				t = generic_data_colapser(run['results'])
 				for tk, tv in t.items():
