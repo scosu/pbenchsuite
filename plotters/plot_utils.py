@@ -225,7 +225,7 @@ def plot_bar_chart(data, l1_keys=None, l2_keys=None, l3_keys=None, colors_arg=No
 	label_colors = {}
 	global colors
 	if colors_arg == None:
-		colors = ['0.3', '0.5', '0.7', '0.4', '0.6', '0.8']
+		colors = ['b', 'g', 'r', 'c', 'm', 'y', '0.3', '0.5', '0.7']
 	else:
 		colors = colors_arg
 	global colorid
