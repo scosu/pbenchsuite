@@ -1,6 +1,0 @@
-#!/bin/bash
-
-if ! whereis 7z | grep -q "/"
-then
-	echo "7z"
-fi

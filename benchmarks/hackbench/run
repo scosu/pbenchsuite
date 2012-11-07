@@ -1,7 +1,0 @@
-#!/bin/bash
-echo "{"
-echo "\"runtime\": {\"value\":"
-./hackbench $@ | grep Time | cut -d " " -f 2
-echo ","
-echo "\"unit\": \"s\","
-echo "\"description\": \"Runtime\"}}"

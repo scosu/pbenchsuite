@@ -1,4 +1,0 @@
-#!/bin/bash
-
-gcc -o yield yield.c -lpthread
-
