@@ -37,3 +37,5 @@ Contribution
 ============
 
 If you have any new plotters/benchmarks/benchsuites or feedback, please contact me or create merge requests.
+
+pbenchsuite uses these matplotlib colors: http://www.huyng.com/posts/sane-color-scheme-for-matplotlib/
