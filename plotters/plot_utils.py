@@ -107,14 +107,12 @@ def plot_line_chart(data, x_keys=None, title=None, y_label=None, x_label=None, n
 	if fmts_arg == None:
 		fmts = [
 				{'color': '#348ABD', 'linestyle': '-', 'marker': ' '},
-				{'color': '#7A68A6', 'linestyle': '-', 'marker': ' '},
 				{'color': '#A60628', 'linestyle': '-', 'marker': ' '},
 				{'color': '#467821', 'linestyle': '-', 'marker': ' '},
 				{'color': '#CF4457', 'linestyle': '-', 'marker': ' '},
 				{'color': '#188487', 'linestyle': '-', 'marker': ' '},
 				{'color': '#E24A33', 'linestyle': '-', 'marker': ' '},
 				{'color': '#348ABD', 'linestyle': '--', 'marker': ' '},
-				{'color': '#7A68A6', 'linestyle': '--', 'marker': ' '},
 				{'color': '#A60628', 'linestyle': '--', 'marker': ' '},
 				{'color': '#467821', 'linestyle': '--', 'marker': ' '},
 				{'color': '#CF4457', 'linestyle': '--', 'marker': ' '},
@@ -227,7 +225,7 @@ def plot_bar_chart(data, l1_keys=None, l2_keys=None, l3_keys=None, colors_arg=No
 	label_colors = {}
 	global colors
 	if colors_arg == None:
-		colors = ['#348ABD', '#7A68A6', '#A60628', '#467821', '#CF4457', '#188487', '#E24A33', '0.3', '0.5', '0.7']
+		colors = ['#348ABD', '#A60628', '#467821', '#CF4457', '#188487', '#E24A33', '0.3', '0.5', '0.7']
 	else:
 		colors = colors_arg
 	global colorid
