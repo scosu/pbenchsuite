@@ -1,3 +1,8 @@
+Version 0.2
+===========
+
+Version 0.2 is the last and unfinished version with json backend. This release is not stable. Please do not use this and wait for version 0.3 with sqlite backend
+
 PBenchSuite
 ==========
 
