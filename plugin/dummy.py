@@ -14,7 +14,7 @@ def register():
 			intern_version = "bzip2_gzip1",
 			description = 'dummy1 is the first out of two dummy ' +
 					'benchmarks that should help you to ' +
-					'understand pbenchsuite',
+					'understand pbenchsuite.',
 			requirements = [rq1],
 			valuetypes = valuetypedict)
 	b2 = pbench.Benchmark(

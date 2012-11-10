@@ -2,6 +2,30 @@
 
 import hashlib
 
+def _get_indentation(indent, indent_str):
+	ind = ''
+	for i in range(indent):
+		ind += indent_str
+	return ind
+
+def _print_block_text(text, width=80, indent=0, indent_str='  '):
+	ind = _get_indentation(indent, indent_str)
+	output = ''
+	for line in text.splitlines():
+		words = line.split(' ')
+		line_size = len(ind)
+		output += ind
+		for word in words:
+			if line_size + len(word) > width:
+				output = output[:-1] + "\n"
+				output += ind
+				line_size = len(ind)
+			output += word + ' '
+			line_size += len(word) + 1
+		output += "\n"
+	output = output[:-1]
+	print(output)
+
 class ValueType:
 	""" Class describing a value type """
 	def __init__(self, unit, datatype = 'int', description = None):
@@ -21,6 +45,15 @@ class Requirement:
 		self.description = description
 		self.version = version
 		self.found = found
+	def missing(self):
+		return not self.found
+	def to_string(self):
+		ret = self.name
+		if self.version != None:
+			ret += ' ' + self.version
+		if self.description != None:
+			ret += ' ' + self.description
+		return ret
 
 class Option:
 	def __init__(self, name, description = None, default = None):
@@ -43,40 +76,77 @@ class OptionValue:
 
 class Plugin:
 	def __init__(self, name, intern_version, description = None,
-			available_options = []):
-		self.__plugin_obj = None
+			available_options = None, requirements = None):
+		self.__plugin_mod = None
 		self.name = name
 		self.description = description
 		self.intern_version = intern_version
 		self.available_options = available_options
+		self.requirements = requirements
+	def _print_data_only(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		ind_deep = _get_indentation(indent + 1, indent_str)
+		ind_deep2 = _get_indentation(indent + 2, indent_str)
+		if self.description != None:
+			print(ind + 'Description')
+			_print_block_text(self.description, indent=indent+1,
+					indent_str = indent_str)
+		if self.intern_version != None:
+			print(ind + 'Internal version: ' + self.intern_version)
+		if self.requirements != None:
+			missing = []
+			fullfilled = []
+			for req in self.requirements:
+				if not req.missing():
+					fullfilled.append(req.to_string())
+					continue
+				missing.append(req.to_string())
+			if len(self.requirements) != 0:
+				print(ind + 'Requirements')
+			if len(missing) != 0:
+				print(ind_deep + 'Missing')
+				for req in missing:
+					print(ind_deep2 + req)
+			if len(fullfilled) != 0:
+				print(ind_deep + 'Found')
+				for req in fullfilled:
+					print(ind_deep2 + req)
+
+
+	def print(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'Plugin ' + self.name)
+		self._print_data_only(indent+1, indent_str)
+
+
 
 class Merger(Plugin):
+	def print(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'Merger ' + self.name)
+		self._print_data_only(indent+1, indent_str)
 	pass
 
 class Visualizer(Plugin):
+	def print(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'Visualizer ' + self.name)
+		self._print_data_only(indent+1, indent_str)
 	pass
 
 class BGLoad(Plugin):
+	def print(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'BGLoader ' + self.name)
+		self._print_data_only(indent+1, indent_str)
 	pass
 
 
 class DataCollector(Plugin):
 	""" Benchmark class """
 	def __init__(self, name, data_version, intern_version, description = None,
-			valuetypes = {}, requirements = [], available_options = []):
-		"""
-			name, is a unique name for this benchmark
-			data_version, string about datastructure version, every
-				change to the datastructure returned has to increase
-				the datastructure version
-			intern_version, string of concatenated versions of internally
-				used software
-			description, optional description of this benchmark
-			valuetypes, dict of name => value_type-object
-			requirements, List of requirement objects
-			available_options, list of option objects
-		"""
-		super(Plugin, self).__init__(name = name,
+			valuetypes = None, requirements = None, available_options = None):
+		super(DataCollector, self).__init__(name = name,
 				description = description,
 				intern_version = intern_version,
 				requirements = requirements,
@@ -95,11 +165,9 @@ class DataCollector(Plugin):
 
 class Benchmark(DataCollector):
 	def __init__(self, name, data_version, intern_version, description = None,
-			valuetypes = {}, requirements = [], available_options = [],
+			valuetypes = None, requirements = None, available_options = None,
 			nr_independent_values = 1):
-		""" nr_independent_values should be the number of independent values
-			measured by this benchmark in one round"""
-		super(DataCollector, self).__init__(name = name,
+		super(Benchmark, self).__init__(name = name,
 				data_version = data_version,
 				intern_version = intern_version,
 				description = description,
@@ -111,8 +179,16 @@ class Benchmark(DataCollector):
 			self.nr_independent_values = len(valuetypes)
 		else:
 			self.nr_independent_values = nr_independent_values
+	def print(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'Benchmark ' + self.name)
+		self._print_data_only(indent+1, indent_str)
 
 class Monitor(DataCollector):
+	def print(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'Monitor ' + self.name)
+		self._print_data_only(indent+1, indent_str)
 	pass
 
 class BenchmarkRunner:
@@ -154,7 +230,7 @@ class RunSetting:
 		self.max_runs = max_runs
 
 class RunCombination:
-	def __init__(self, benchmarks, bgload=[], monitors=[], setting = None):
+	def __init__(self, benchmarks, bgload = None, monitors = None, setting = None):
 		self.benchmarks = benchmarks
 		self.bgload = bgload
 		self.monitors = monitors

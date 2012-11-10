@@ -8,7 +8,28 @@ import traceback
 import pbench
 import plugin
 
+logging.basicConfig()
 log = logging.getLogger()
+
+
+plugin_types = ['bgload', 'benchmark', 'monitor', 'visualizer', 'merger', 'benchsuite']
+
+def category_to_type(cat):
+	cat = cat.lower()
+	if cat == 'bench' or cat == 'benchmark':
+		return 'benchmark'
+	if cat == 'load' or cat == 'bgload':
+		return 'bgload'
+	if cat == 'suite' or cat == 'benchsuite':
+		return 'benchsuite'
+	if cat == 'monitor' or cat == 'mon':
+		return 'monitor'
+	if cat == 'vis' or cat == 'plot' or cat == 'plotter' or cat == 'visualizer':
+		return 'visualizer'
+	if cat == 'merger':
+		return 'merger'
+	log.info('Unknown category ' + cat)
+	return ''
 
 class PluginModule:
 	def __init__(self, mod):
@@ -18,6 +39,11 @@ class PluginModule:
 		self.bgload = {}
 		self.visualizer = {}
 		self.merger = {}
+		self.benchsuite = {}
+
+	def print(self, indent = 0, indent_str = '  '):
+		ind = pbench._get_indentation(indent, indent_str)
+		print(ind + 'Module ' + self.mod.__name__)
 
 
 class PluginManager:
@@ -28,16 +54,17 @@ class PluginManager:
 		self.monitor = {}
 		self.visualizer = {}
 		self.merger = {}
+		self.benchsuite = {}
 
 		for _, name, ispkg in pkgutil.walk_packages(plugin.__path__):
 			if ispkg:
 				continue
-			log.info('Found plugin file ' + name + ', importing...')
+			log.debug('Found plugin file ' + name + ', importing...')
 			m = __import__('plugin.' + name)
 			mod = getattr(m, name)
 			plug = PluginModule(mod)
 
-			log.info('Loading available plugins from module ' + name)
+			log.debug('Loading available plugins from module ' + name)
 			try:
 				plugins = mod.register()
 			except Exception as e:
@@ -73,27 +100,78 @@ class PluginManager:
 
 
 
-
+			log.debug('Module ' + name + ' defines valid plugins')
 			# Everything was successfull, store the module
-			self.modules[name] = mod
+			plug.__plugin_mod = mod
+			self.module[name] = plug
+			for typ in plugin_types:
+				for k,v in getattr(plug, typ).items():
+					getattr(self, typ)[k] = v
+
+	def print_modules(self, indent=0, indent_str='  ', by_modules = False,
+			by_plugins=True):
+		ind = pbench._get_indentation(indent, indent_str)
+		if by_modules:
+			for k in sorted(self.module.keys()):
+				v = self.module[k]
+				v.print(indent + 1, indent_str)
+		if by_plugins:
+			for typ in sorted(plugin_types):
+				typdict = getattr(self, typ)
+				if len(typdict) == 0:
+					continue
+				print(ind + typ)
+				for k in sorted(typdict.keys()):
+					v = typdict[k]
+					v.print(indent = indent + 1, indent_str = indent_str)
+					print("")
 
 
+	def get_plugins_from_identifier(self, id):
+		cat, sep, name = id.partition('.')
+		typ = category_to_type(cat)
+		if (name == '' and sep != '.') or typ == '':
+			name = cat
+			types_to_check = plugin_types
+		else:
+			types_to_check = [typ]
 
-
+		ret = []
+		for typ in types_to_check:
+			typ_dict = getattr(self, typ)
+			if name == '':
+				ret += typ_dict.values()
+				continue
+			if name in typ_dict:
+				ret.append(typ_dict[name])
+		if len(ret) == 0:
+			log.error('Could not find plugin matching identifier ' + id)
+		return ret
 
 
 def cmd_info(parsed):
 	p = PluginManager()
+	if len(parsed.identifier) == 0:
+		p.print_modules(indent_str='    ')
+	else:
+		items = []
+		for id in parsed.identifier:
+			items += p.get_plugins_from_identifier(id)
+		for i in items:
+			i.print(indent_str='    ')
+			print("")
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
+	parser.add_argument('-l', '--loglevel', default='WARN')
 
 	parse_cmds = parser.add_subparsers()
 
 
 	parser_info = parse_cmds.add_parser('info',
 			help='Information about plugins and pbenchsuite')
+	parser_info.add_argument('identifier', nargs='*', help='[[(bench|suite|monitor|merger|plotter)].][name]')
 	parser_info.set_defaults(func=cmd_info)
 
 
@@ -166,4 +244,5 @@ long as this is smaller than the real standard error.''')
 
 
 	parsed = parser.parse_args()
+	log.setLevel(parsed.loglevel.upper())
 	parsed.func(parsed)
