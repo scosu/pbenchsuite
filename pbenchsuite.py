@@ -4,6 +4,8 @@ import argparse
 import pkgutil
 import logging
 import traceback
+import threading
+import os
 
 import pbench
 import plugin
@@ -47,6 +49,18 @@ class PluginModule:
 
 
 class PluginManager:
+	def __gather_benchsuite_plugins(self):
+		exceptions = []
+		for k in self.benchsuite.keys():
+			v = self.benchsuite[k]
+			try:
+				v._gather_plugins(self)
+			except Exception as e:
+				log.error('Benchsuite ' + k + ' did not find all'
+						+ ' necessary plugins: ' + str(e))
+				exceptions.append(k)
+		for i in exceptions:
+			del self.benchsuite[i]
 	def __init__(self):
 		self.module = {}
 		self.benchmark = {}
@@ -85,6 +99,8 @@ class PluginManager:
 					plug_type = 'visualizer'
 				elif isinstance(i, pbench.Merger):
 					plug_type = 'merger'
+				elif isinstance(i, pbench.Benchsuite):
+					plug_type = 'benchsuite'
 
 				if plug_type == None:
 					log.error(name + ": Unknown plugin type, object " + str(i))
@@ -97,16 +113,18 @@ class PluginManager:
 					log.error(name + ': Double definition ' + plug_type + ' ' + i.name)
 					continue
 				getattr(plug, plug_type)[i.name] = i
+				i._plugin_mod = mod
 
 
 
 			log.debug('Module ' + name + ' defines valid plugins')
 			# Everything was successfull, store the module
-			plug.__plugin_mod = mod
+			plug._plugin_mod = mod
 			self.module[name] = plug
 			for typ in plugin_types:
 				for k,v in getattr(plug, typ).items():
 					getattr(self, typ)[k] = v
+		self.__gather_benchsuite_plugins()
 
 	def print_modules(self, indent=0, indent_str='  ', by_modules = False,
 			by_plugins=True):
@@ -127,26 +145,57 @@ class PluginManager:
 					print("")
 
 
-	def get_plugins_from_identifier(self, id):
-		cat, sep, name = id.partition('.')
-		typ = category_to_type(cat)
-		if (name == '' and sep != '.') or typ == '':
-			name = cat
-			types_to_check = plugin_types
+	def get_plugins_by_identifier(self, id, category=None):
+		type_filter = None
+		if category != None:
+			typ = category_to_type(category)
+			name = id
+			type_filter = typ
 		else:
-			types_to_check = [typ]
+			cat, sep, name = id.partition('.')
+			if sep == '.':
+				typ = category_to_type(cat)
+				if typ != '':
+					type_filter = typ
+			else:
+				name = cat
 
 		ret = []
-		for typ in types_to_check:
+		for typ in plugin_types:
+			if type_filter != None and type_filter != typ:
+				continue
 			typ_dict = getattr(self, typ)
 			if name == '':
 				ret += typ_dict.values()
 				continue
 			if name in typ_dict:
 				ret.append(typ_dict[name])
+		if type_filter == 'bgload' and (name == '' or len(ret) == 0):
+			if name == '':
+				new = []
+				for i in self.benchmark.values():
+					new.append(pbench.BGLoadWrapped(i))
+				ret = new + ret
+			elif name in self.benchmark:
+				ret = [pbench.BGLoadWrapped(self.benchmark[name])] + ret
 		if len(ret) == 0:
 			log.error('Could not find plugin matching identifier ' + id)
 		return ret
+	def get_plugin_by_identifier(self, id, category=None):
+		ret = self.get_plugins_by_identifier(id, category)
+		if len(ret) != 1:
+			raise Exception("Could not find necessary plugin " + id)
+		return ret[0]
+	def get_all_plugins(self):
+		plugs = []
+		for typ in plugin_types:
+			plugs += getattr(self, typ).values()
+		return plugs
+	def get_all_modules(self):
+		return list(self.module.values())
+
+class PluginSet:
+	pass
 
 
 def cmd_info(parsed):
@@ -156,15 +205,67 @@ def cmd_info(parsed):
 	else:
 		items = []
 		for id in parsed.identifier:
-			items += p.get_plugins_from_identifier(id)
+			items += p.get_plugins_by_identifier(id)
 		for i in items:
 			i.print(indent_str='    ')
 			print("")
+
+def cmd_prepare(parsed):
+	success = True
+	class PrepareThread(threading.Thread):
+		def __init__(self, mod, mod_path):
+			super(PrepareThread, self).__init__()
+			self.mod = mod
+			self.mod_path = mod_path
+		def run(self):
+			ret = False
+			try:
+				ret = mod.prepare_installation(self.mod_path)
+			except Exception as e:
+				log.error(str(e))
+				pass
+			if not ret:
+				log.error("Error in preparing " + self.mod.__name__)
+				success = False
+	p = PluginManager()
+	modules = []
+	prepare_threads = []
+	if len(parsed.identifier) == 0:
+		modules = p.get_all_modules()
+	else:
+		plugins = []
+		for id in parsed.identifier:
+			plugins += p.get_plugins_by_identifier(id)
+		for i in plugins:
+			if i._plugin_mod in modules:
+				continue
+			modules.append(i._plugin_mod)
+	for mod in modules:
+		if 'prepare_installation' not in dir(mod):
+			continue
+		mod_path = os.path.expanduser(os.path.join(parsed.package_dir, mod.__name__))
+		try:
+			os.makedirs(mod_path, exist_ok = True)
+		except Exception as e:
+			log.debug('Failed to create dir ' + mod_path + ' ' + str(e))
+			pass
+		if not os.path.isdir(mod_path):
+			log.error('Error preparing ' + mod.__name__ + ', could not create dir ' + mod_path)
+			continue
+		t = PrepareThread(mod, mod_path)
+		prepare_threads.append(t)
+		log.info('Preparing ' + mod.__name__)
+		t.start()
+	for t in prepare_threads:
+		t.join()
+	log.info('Finished prepare installation, success: ' + str(success))
+	pass
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-l', '--loglevel', default='WARN')
+	parser.add_argument('--package_dir', default='~/.pbenchsuite/install_data/')
 
 	parse_cmds = parser.add_subparsers()
 
@@ -173,6 +274,12 @@ if __name__ == '__main__':
 			help='Information about plugins and pbenchsuite')
 	parser_info.add_argument('identifier', nargs='*', help='[[(bench|suite|monitor|merger|plotter)].][name]')
 	parser_info.set_defaults(func=cmd_info)
+
+
+	parser_prepare = parse_cmds.add_parser('prepare',
+			help='Information about plugins and pbenchsuite')
+	parser_prepare.add_argument('identifier', nargs='*', help='[[(bench|suite|monitor|merger|plotter)].][name]')
+	parser_prepare.set_defaults(func=cmd_prepare)
 
 
 	parser_merge = parse_cmds.add_parser('merge',
@@ -186,6 +293,8 @@ if __name__ == '__main__':
 	parser_run = parse_cmds.add_parser('run',
 			help='Run benchmarks and/or benchsuites',
 			formatter_class=argparse.RawTextHelpFormatter)
+	parser_run.add_argument('-s', '--sysinfo', default='',
+			help="Additional system information about the current system state.")
 	parser_run.add_argument('-d', '--database', default='~/.pbenchsuite/results.sqlite',
 			help="Database where to store the results.\nDefault:"
 				+ ' ~/.pbenchsuite/results.sqlite')

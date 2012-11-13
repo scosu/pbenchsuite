@@ -2,6 +2,20 @@
 
 import hashlib
 
+def _init_list(parameter):
+	if isinstance(parameter, list):
+		return parameter
+	if parameter != None:
+		raise Exception("Expected list, got something else: " + str(parameter))
+	return []
+
+def _init_dict(parameter):
+	if isinstance(parameter, dict):
+		return parameter
+	if parameter != None:
+		raise Exception("Expected dict, got something else: " + str(parameter))
+	return {}
+
 def _get_indentation(indent, indent_str):
 	ind = ''
 	for i in range(indent):
@@ -62,27 +76,34 @@ class Option:
 		self.default = default
 
 class OptionValue:
-	def __init__(self, option, args = []):
+	def __init__(self, option, args = None):
+		self.option = option
 		self.value = option.default
-		for i in args:
-			argk, _, argv = i.partition('=')
-			if argk == option.name:
-				if argv == '':
-					self.value = True
-				else:
-					self.value = argv
+		if args == None:
+			return
+		if isinstance(args, dict):
+			if option.name in args:
+				self.value = args[option.name]
+		elif isinstance(args, list):
+			for i in args:
+				argk, _, argv = i.partition('=')
+				if argk == option.name:
+					if argv == '':
+						self.value = True
+					else:
+						self.value = argv
 	def get_value():
 		return self.value
 
 class Plugin:
 	def __init__(self, name, intern_version, description = None,
 			available_options = None, requirements = None):
-		self.__plugin_mod = None
+		self._plugin_mod = None
 		self.name = name
 		self.description = description
 		self.intern_version = intern_version
-		self.available_options = available_options
-		self.requirements = requirements
+		self.available_options = _init_list(available_options)
+		self.requirements = _init_list(requirements)
 	def _print_data_only(self, indent=0, indent_str='  '):
 		ind = _get_indentation(indent, indent_str)
 		ind_deep = _get_indentation(indent + 1, indent_str)
@@ -117,6 +138,8 @@ class Plugin:
 		ind = _get_indentation(indent, indent_str)
 		print(ind + 'Plugin ' + self.name)
 		self._print_data_only(indent+1, indent_str)
+	def _generate_option_values(self, opts):
+		return None
 
 
 
@@ -137,9 +160,17 @@ class Visualizer(Plugin):
 class BGLoad(Plugin):
 	def print(self, indent=0, indent_str='  '):
 		ind = _get_indentation(indent, indent_str)
-		print(ind + 'BGLoader ' + self.name)
+		print(ind + 'BGLoad ' + self.name)
 		self._print_data_only(indent+1, indent_str)
 	pass
+
+class BGLoadWrapped(Plugin):
+	def __init__(self, benchmark):
+		self.benchmark_plugin = benchmark
+	def print(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'BGLoad Wrapped Benchmark')
+		self.benchmark_plugin.print(indent+1, indent_str)
 
 
 class DataCollector(Plugin):
@@ -191,34 +222,6 @@ class Monitor(DataCollector):
 		self._print_data_only(indent+1, indent_str)
 	pass
 
-class BenchmarkRunner:
-	def run(self):
-		raise NotImplementedError('run not implemented')
-	def install(self, preperation_path, install_path):
-		return True
-	def uninstall(self, install_path):
-		return True
-	def pre(self):
-		return True
-	def post(self):
-		raise NotImplementedError('post not implemented, you have to return'
-				+ ' the results here')
-	def check_stderr(self, last_results, percent_stderr):
-		raise NotImplementedError()
-
-class MonitorRunner:
-	def install(self, preperation_path, install_path):
-		return True
-	def uninstall(self, install_path):
-		return True
-	def init(self):
-		return True
-	def acquire_data(self):
-		raise NotImplementedError('acquire_data not implemented, you have'
-				+ ' to implement this function for a monitor')
-	def shutdown(self):
-		return True
-
 class RunSetting:
 	def __init__(self, min_runs = 2, min_runtime = 0, percent_stderr = 0,
 			max_runtime = None, max_runs = None):
@@ -229,17 +232,148 @@ class RunSetting:
 		self.max_runtime = max_runtime
 		self.max_runs = max_runs
 
-class RunCombination:
-	def __init__(self, benchmarks, bgload = None, monitors = None, setting = None):
-		self.benchmarks = benchmarks
-		self.bgload = bgload
-		self.monitors = monitors
-		self.setting = setting
+class PluginRunDef:
+	def __init__(self, plugin_name, options_dict = None):
+		self.plugin_name = plugin_name
+		self.options_dict = _init_dict(options_dict)
+		self._plugin = None
+		self.is_bgload = False
+	def _map_to_plugin(self, plugin_manager):
+		p = plugin_manager.get_plugin_by_identifier(self.plugin_name)
+		if isinstance(p, BGLoadWrapped):
+			self.is_bgload = True
+			self._plugin = p.benchmark_plugin
+		else:
+			self._plugin = p
+	def _instantiate(self):
+		runner = None
+		try:
+			opts = self._plugin._generate_option_values(self.options_dict)
+			if isinstance(self._plugin, Benchmark):
+				runner = self._plugin._plugin_mod.create_benchmark(self._plugin.name, opts)
+				if is_bgload:
+					runner = BGLoadBenchRunner(runner)
+			elif isinstance(self._plugin, Monitor):
+				runner = self._plugin._plugin_mod.create_monitor(self._plugin.name, opts)
+			elif isinstance(self._plugin, BGLoad):
+				runner = self._plugin._plugin_mod.create_bgload(self._plugin.name, opts)
+		except Exception as e:
+			raise Exception("Problem creating a instance of a plugin for " + self.plugin_name + " " + str(e))
+		if runner == None:
+			raise Exception("Unknown type of plugin " + self.plugin_name)
 
-class Benchsuite:
-	def __init__(self, run_combos, mergers = ['generic'],
-			visualizers = ['generic'], setting = None):
-		self.run_combos = run_combos
-		self.mergers = mergers
-		self.visualizers = visualizers
+class RunCombination:
+	def __init__(self, plugins, setting = None):
+		self.plugins = plugins
 		self.setting = setting
+	def _gather_plugins(self, plugin_manager):
+		for i in self.plugins:
+			i._map_to_plugin(plugin_manager)
+	def _instantiate(self):
+		plugin_instances = []
+		for i in self.plugins:
+			plugin_instances.append(i._instantiate())
+		ctxt = RunContext(plugin_instances, self.setting)
+		return ctxt
+
+class Benchsuite(Plugin):
+	def __init__(self, name, run_combos, version='1.0', description=None,
+			mergers = None,
+			visualizers = None, setting = None):
+		super(Benchsuite, self).__init__(name = name,
+				description = description,
+				intern_version = version)
+		self.run_combos = run_combos
+		if mergers == None:
+			self.mergers = []
+		else:
+			self.mergers = mergers
+		if visualizers == None:
+			self.visualizers = []
+		else:
+			self.visualizers = visualizers
+		self.setting = setting
+		self.found_components = False
+	def _gather_plugins(self, plugin_manager):
+		for i in self.run_combos:
+			i._gather_plugins(plugin_manager)
+		for i in self.mergers:
+			i._map_to_plugin(plugin_manager)
+		for i in self.visualizers:
+			i._map_to_plugin(plugin_manager)
+		self.found_components = True
+	def _instantiate(self):
+		ctxts = []
+		for i in self.run_combos:
+			ctxts.append((i, i._instantiate()))
+		return SuiteContext(ctxts, self.setting)
+
+
+class SuiteContext:
+	def __init__(self, runctxts, settings = None):
+		self.runctxts = runctxts
+		self.settings = settings
+
+class RunContext:
+	def __init__(self, plugs, settings=None):
+		self.result_pair_list = []
+		self.benchmarks = []
+		self.bgloads = []
+		self.monitors = []
+	def execute(self):
+		pass
+	def is_finished(self):
+		return True
+		pass
+	def remaining_runtime(self):
+		return 10
+
+class Runner:
+	def run(self):
+		raise NotImplementedError('Runner run not implemented')
+	def install(self, preperation_path):
+		return True
+	def uninstall(self):
+		return True
+	def pre(self):
+		return True
+	def post(self):
+		return True
+
+class BenchmarkRunner(Runner):
+	def post(self):
+		raise NotImplementedError('post not implemented, you have to return'
+				+ ' the results here')
+	def check_stderr(self, last_results, percent_stderr):
+		raise NotImplementedError()
+
+class MonitorRunner(Runner):
+	pass
+
+class BGLoadRunner(Runner):
+	def stop(self):
+		raise NotImplementedError('not stopable bgload runner')
+
+class BGLoadBenchRunner(BGLoadRunner):
+	def __init__(self, bench_runner):
+		self.bench_runner = bench_runner
+		self.shutdown = False
+	def install(self, preperation_path):
+		return self.bench_runner.install(preperation_path)
+	def uninstall(self):
+		return self.bench_runner.uninstall()
+	def pre(self):
+		return self.bench_runner.pre()
+	def post(self):
+		return self.bench_runner.post()
+	def run(self):
+		self.bench_runner.run()
+		while not self.shutdown:
+			self.bench_runner.post()
+			self.bench_runner.pre()
+			self.bench_runner.run()
+	def stop(self):
+		self.shutdown = True
+
+
+

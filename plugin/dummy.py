@@ -31,7 +31,13 @@ def register():
 			intern_version = "1.0",
 			description = 'this is the registration of a dummy monitor',
 			valuetypes = valuetypedict)
-	return [b1, b2, monitor1]
+	runcombo1 = pbench.RunCombination([pbench.PluginRunDef('benchmark.dummy1'),
+					pbench.PluginRunDef('bgload.dummy1'),
+					pbench.PluginRunDef('dummy_monitor')])
+	runcombo2 = pbench.RunCombination([pbench.PluginRunDef('benchmark.dummy1'),
+					pbench.PluginRunDef('benchmark.dummy2')])
+	suite1 = pbench.Benchsuite('testbenchsuite', [runcombo1, runcombo2])
+	return [b1, b2, monitor1, suite1]
 
 def prepare_installation(preperation_path):
 	# Prepare all datafiles and everything for the installation.
