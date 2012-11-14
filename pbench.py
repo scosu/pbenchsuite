@@ -1,6 +1,15 @@
 #/usr/bin/python3
 
 import hashlib
+import subprocess
+import os
+
+def get_executable_path(name):
+	for path in os.environ['PATH'].split(os.pathsep):
+		exec_path = os.path.join(path, name)
+		if os.path.isfile(exec_path) and os.access(exec_path, os.X_OK):
+			return exec_path
+	return None
 
 def _init_list(parameter):
 	if isinstance(parameter, list):
@@ -139,7 +148,16 @@ class Plugin:
 		print(ind + 'Plugin ' + self.name)
 		self._print_data_only(indent+1, indent_str)
 	def _generate_option_values(self, opts):
-		return None
+		vals = []
+		for opt in self.available_options:
+			vals.append(OptionValue(opt, opts))
+		return vals
+	def get_missing_requirements(self):
+		ret = []
+		for i in self.requirements:
+			if i.missing():
+				ret.append(i)
+		return ret
 
 
 
@@ -251,16 +269,18 @@ class PluginRunDef:
 			opts = self._plugin._generate_option_values(self.options_dict)
 			if isinstance(self._plugin, Benchmark):
 				runner = self._plugin._plugin_mod.create_benchmark(self._plugin.name, opts)
-				if is_bgload:
+				if self.is_bgload:
 					runner = BGLoadBenchRunner(runner)
 			elif isinstance(self._plugin, Monitor):
 				runner = self._plugin._plugin_mod.create_monitor(self._plugin.name, opts)
 			elif isinstance(self._plugin, BGLoad):
 				runner = self._plugin._plugin_mod.create_bgload(self._plugin.name, opts)
 		except Exception as e:
-			raise Exception("Problem creating a instance of a plugin for " + self.plugin_name + " " + str(e))
+			raise Exception("Problem creating an instance of a plugin for " + self.plugin_name + " " + str(e))
 		if runner == None:
 			raise Exception("Unknown type of plugin " + self.plugin_name)
+	def get_missing_requirements(self):
+		return self._plugin.get_missing_requirements()
 
 class RunCombination:
 	def __init__(self, plugins, setting = None):
@@ -272,42 +292,52 @@ class RunCombination:
 	def _instantiate(self):
 		plugin_instances = []
 		for i in self.plugins:
-			plugin_instances.append(i._instantiate())
+			plugin_instances.append(DefRunnerTuple(i, i._instantiate()))
 		ctxt = RunContext(plugin_instances, self.setting)
 		return ctxt
+	def get_missing_requirements(self):
+		ret = []
+		for i in self.plugins:
+			ret += i.get_missing_requirements()
+		return ret
+
 
 class Benchsuite(Plugin):
 	def __init__(self, name, run_combos, version='1.0', description=None,
-			mergers = None,
-			visualizers = None, setting = None):
+			setting = None):
 		super(Benchsuite, self).__init__(name = name,
 				description = description,
 				intern_version = version)
 		self.run_combos = run_combos
-		if mergers == None:
-			self.mergers = []
-		else:
-			self.mergers = mergers
-		if visualizers == None:
-			self.visualizers = []
-		else:
-			self.visualizers = visualizers
 		self.setting = setting
 		self.found_components = False
 	def _gather_plugins(self, plugin_manager):
 		for i in self.run_combos:
 			i._gather_plugins(plugin_manager)
-		for i in self.mergers:
-			i._map_to_plugin(plugin_manager)
-		for i in self.visualizers:
-			i._map_to_plugin(plugin_manager)
 		self.found_components = True
 	def _instantiate(self):
 		ctxts = []
 		for i in self.run_combos:
 			ctxts.append((i, i._instantiate()))
 		return SuiteContext(ctxts, self.setting)
+	def get_missing_requirements(self):
+		if not self.found_components:
+			raise Exception('Benchsuite ' + self.name + ' not able to'
+					' get missing requirements because some '
+					'plugin identifiers failed to map to real plugins')
+		ret = super(Benchsuite, self).get_missing_requirements()
+		for i in self.run_combos:
+			ret += i.get_missing_requirements()
+		return ret
 
+class DefRunnerTuple:
+	def __init__(self, plugin, runner):
+		self.plugin = plugin
+		self.runner = runner
+class DefResultTuple:
+	def __init__(self, plugin, result):
+		self.plugin = plugin
+		self.result = result
 
 class SuiteContext:
 	def __init__(self, runctxts, settings = None):
@@ -315,16 +345,22 @@ class SuiteContext:
 		self.settings = settings
 
 class RunContext:
-	def __init__(self, plugs, settings=None):
-		self.result_pair_list = []
+	def __init__(self, runnertuple, settings=None):
 		self.benchmarks = []
 		self.bgloads = []
 		self.monitors = []
+		for i in runnertuple:
+			if isinstance(i.runner, BenchmarkRunner):
+				self.benchmarks.append(i)
+			elif isinstance(i.runner, MonitorRunner):
+				self.monitors.append(i)
+			elif isinstance(i.runner, BGLoadRunner)\
+					or isinstance(i.runner, BGLoadBenchRunner):
+				self.bgloads.append(i)
 	def execute(self):
-		pass
-	def is_finished(self):
-		return True
-		pass
+		while True:
+			# one run
+			pass
 	def remaining_runtime(self):
 		return 10
 

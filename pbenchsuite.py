@@ -6,6 +6,7 @@ import logging
 import traceback
 import threading
 import os
+import sys
 
 import pbench
 import plugin
@@ -197,21 +198,32 @@ class PluginManager:
 class PluginSet:
 	pass
 
+def plugins_to_modules(plugins):
+	modules = []
+	for i in plugins:
+		if i._plugin_mod in modules:
+			continue
+		modules.append(i._plugin_mod)
+	return modules
 
-def cmd_info(parsed):
-	p = PluginManager()
-	if len(parsed.identifier) == 0:
-		p.print_modules(indent_str='    ')
-	else:
-		items = []
-		for id in parsed.identifier:
-			items += p.get_plugins_by_identifier(id)
-		for i in items:
-			i.print(indent_str='    ')
-			print("")
+def check_plugins_requirements(plugins):
+	missing = []
+	for i in plugins:
+		missing += i.get_missing_requirements()
+	if len(missing) == 0:
+		return True
+	print('Missing requirements:')
+	for i in set(missing):
+		print('    ' + i.to_string())
+	return False
 
-def cmd_prepare(parsed):
+
+def prepare_plugins(plugins):
+	if not check_plugins_requirements(plugins):
+		return False
+	modules = plugins_to_modules(plugins)
 	success = True
+	prepare_threads = []
 	class PrepareThread(threading.Thread):
 		def __init__(self, mod, mod_path):
 			super(PrepareThread, self).__init__()
@@ -227,19 +239,6 @@ def cmd_prepare(parsed):
 			if not ret:
 				log.error("Error in preparing " + self.mod.__name__)
 				success = False
-	p = PluginManager()
-	modules = []
-	prepare_threads = []
-	if len(parsed.identifier) == 0:
-		modules = p.get_all_modules()
-	else:
-		plugins = []
-		for id in parsed.identifier:
-			plugins += p.get_plugins_by_identifier(id)
-		for i in plugins:
-			if i._plugin_mod in modules:
-				continue
-			modules.append(i._plugin_mod)
 	for mod in modules:
 		if 'prepare_installation' not in dir(mod):
 			continue
@@ -259,7 +258,100 @@ def cmd_prepare(parsed):
 	for t in prepare_threads:
 		t.join()
 	log.info('Finished prepare installation, success: ' + str(success))
-	pass
+	return success
+
+def cmd_info(parsed):
+	p = PluginManager()
+	if len(parsed.identifier) == 0:
+		p.print_modules(indent_str='    ')
+	else:
+		items = []
+		for id in parsed.identifier:
+			items += p.get_plugins_by_identifier(id)
+		for i in items:
+			i.print(indent_str='    ')
+			print("")
+
+def cmd_prepare(parsed):
+	p = PluginManager()
+	plugs = []
+	if len(parsed.identifier) == 0:
+		plugs = p.get_all_plugins()
+	else:
+		plugs = []
+		for id in parsed.identifier:
+			plugs += p.get_plugins_by_identifier(id)
+	return prepare_plugins(plugs)
+
+
+def cmd_run(parsed):
+	plugins = []
+	p = PluginManager()
+	for combo in parsed.bench:
+		# parse <ID>;<ID>:<OPTION>,<OPTION>;<ID>
+		for id in combo.split(';'):
+			name = id.split(':')[0]
+			plugins.append(p.get_plugin_by_identifier(id))
+	status = prepare_plugins(plugins)
+	if not status:
+		log.error("Failed to prepare all modules, not able to start run")
+		return False
+
+	# List of RunCombination and Benchsuite objects
+	run_definitions = []
+	for combo in parsed.bench:
+		benchs = combo.split(';')
+		if len(benchs) == 1:
+			name, s, optionstr = benchs[0].partition(':')
+			plug = p.get_plugin_by_identifier(name)
+			if s == '' and isinstance(plug, pbench.Benchsuite):
+				run_definitions.append(plug)
+				continue
+
+		has_suite = False
+		plug_run_defs = []
+		for bench in benchs:
+			name, s, optionstr = bench.partition(':')
+			options = {}
+			for opt in optionstr.split(','):
+				opt_k, opt_s, opt_v = opt.partition('=')
+				if opt_k in options:
+					print('Error: Option ' + opt_k + ' defined twice for name ' + name)
+					return False
+				if opt_s == '':
+					options[opt_k] = True
+				else:
+					options[opt_k] = opt_v
+			plugin = p.get_plugin_by_identifier(name)
+			if isinstance(plugin, pbench.Benchsuite):
+				if has_suite:
+					print('Error: ' + combo + ' contains at least two benchsuites.')
+					return False
+				has_suite = True
+				plug_run_defs += plugin.run_combos
+			elif isinstance(plugin, pbench.Benchmark)\
+					or isinstance(plugin, pbench.BGLoad)\
+					or isinstance(plugin, pbench.BGLoadWrapped)\
+					or isinstance(plugin, pbench.Monitor):
+				plug_run_defs.append(pbench.PluginRunDef(name, options))
+			elif isinstance(plugin, pbench.Merger) or\
+					isinstance(plugin, pbench.Visualizer):
+				print('Error: ' + combo + ' contains merger or visualizer. Please use \'plot\' command.')
+				return False
+			else:
+				print('Error: ' + bench + ' defines unknown plugin')
+				return False
+		run_definitions.append(pbench.RunCombination(plug_run_defs))
+
+	for i in run_definitions:
+		i._gather_plugins(p)
+
+	run_instances = []
+
+	for i in run_definitions:
+		run_instances.append(i._instantiate())
+
+	return True
 
 
 if __name__ == '__main__':
@@ -293,6 +385,7 @@ if __name__ == '__main__':
 	parser_run = parse_cmds.add_parser('run',
 			help='Run benchmarks and/or benchsuites',
 			formatter_class=argparse.RawTextHelpFormatter)
+	parser_run.set_defaults(func=cmd_run)
 	parser_run.add_argument('-s', '--sysinfo', default='',
 			help="Additional system information about the current system state.")
 	parser_run.add_argument('-d', '--database', default='~/.pbenchsuite/results.sqlite',
@@ -354,4 +447,8 @@ long as this is smaller than the real standard error.''')
 
 	parsed = parser.parse_args()
 	log.setLevel(parsed.loglevel.upper())
-	parsed.func(parsed)
+	ret = parsed.func(parsed)
+	if ret:
+		sys.exit(0)
+	else:
+		sys.exit(-1)

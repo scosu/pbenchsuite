@@ -1,8 +1,8 @@
 import pbench
 
 def register():
-	rq1 = pbench.Requirement('randomlib', version='>2.0', found=False)
-	rq2 = pbench.Requirement('randomlib2', version='<1.5-rc1', found=True)
+	rq1 = pbench.Requirement('randomlib', version='>2.0', found=True)
+	rq2 = pbench.Requirement('randomlib2', version='<1.5-rc1', found=False)
 	valuetypedict = {}
 	valuetypedict['date'] = pbench.ValueType('s', description='unix timestamp',
 					datatype = 'float')
