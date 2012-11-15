@@ -3,6 +3,9 @@
 import hashlib
 import subprocess
 import os
+import time
+import shutil
+import threading
 
 def get_executable_path(name):
 	for path in os.environ['PATH'].split(os.pathsep):
@@ -279,6 +282,7 @@ class PluginRunDef:
 			raise Exception("Problem creating an instance of a plugin for " + self.plugin_name + " " + str(e))
 		if runner == None:
 			raise Exception("Unknown type of plugin " + self.plugin_name)
+		return runner
 	def get_missing_requirements(self):
 		return self._plugin.get_missing_requirements()
 
@@ -334,17 +338,89 @@ class DefRunnerTuple:
 	def __init__(self, plugin, runner):
 		self.plugin = plugin
 		self.runner = runner
+		self.work_dir = None
 class DefResultTuple:
-	def __init__(self, plugin, result):
+	def __init__(self, plugin, result, time):
 		self.plugin = plugin
 		self.result = result
+		self.time = time
 
 class SuiteContext:
 	def __init__(self, runctxts, settings = None):
 		self.runctxts = runctxts
 		self.settings = settings
+	def execute(self, work_dir, remaining_runtime_others = 0):
+		for i in self.runctxts:
+			i.execute(work_dir, remaining_runtime_others)
+
+class InstallThread(threading.Thread):
+	def __init__(self, runnertup):
+		super(InstallThread, self).__init__()
+		self.success = False
+		self.runnertup = runnertup
+	def run(self):
+		try:
+			print(self.runnertup.work_dir)
+			os.makedirs(self.runnertup.work_dir, exist_ok=True)
+		except Exception as e:
+			print("Error creating work dir for plugin " + self.runnertup.plugin._plugin.name)
+			self.success = False
+			return
+		self.success = self.runnertup.runner.install(self.runnertup.plugin._plugin._plugin_mod.get_prepare_path())
+		if not self.success:
+			print("Error: Failed installing plugin " + self.runnertup.plugin.name)
+class UninstallThread(threading.Thread):
+	def __init__(self, runnertup):
+		super(UninstallThread, self).__init__()
+		self.success = False
+		self.runnertup = runnertup
+	def run(self):
+		self.success = self.runnertup.runner.uninstall(self.runnertup.work_dir)
+		try:
+			shutil.rmtree(self.runnertup.work_dir)
+		except Exception as e:
+			print("Error removing work dir for plugin " + self.runnertup.plugin._plugin.name)
+			self.success = False
+
+		if not self.success:
+			print("Error: Failed uninstalling plugin " + self.runnertup.plugin._plugin.name)
+class RunnerThread(threading.Thread):
+	def __init__(self, runnertup):
+		super(RunnerThread, self).__init__()
+		self.success = False
+		self.runnertup = runnertup
+	def run(self):
+		self.success = self.runnertup.run(self.runnertup.work_dir)
+	def send_stop(self):
+		self.runnertup.stop()
+class MonitorThread(threading.Thread):
+	def __init__(self, runnertups):
+		super(MonitorThread, self).__init__()
+		self.data = []
+		self.runnertups = runnertups
+		self.shutdown = False
+	def run(self):
+		sleep_tgt = time.time()
+		while not self.shutdown:
+			run_data = []
+			for i in self.runnertups:
+				now = time.time()
+				dat = i.runner.run(i.work_dir)
+				result = DefResultTuple(i.plugin, dat, now)
+				run_data.append(result)
+			self.data.append(run_data)
+			now = time.time()
+			sleep_time = max(0, sleep_tgt + 1 - now)
+			sleep_tgt = now + sleep_time
+			time.sleep(sleep_time)
+	def send_stop(self):
+		self.shutdown = True
+
 
 class RunContext:
+	types = ['benchmarks', 'bgloads', 'monitors']
+
+
 	def __init__(self, runnertuple, settings=None):
 		self.benchmarks = []
 		self.bgloads = []
@@ -357,23 +433,106 @@ class RunContext:
 			elif isinstance(i.runner, BGLoadRunner)\
 					or isinstance(i.runner, BGLoadBenchRunner):
 				self.bgloads.append(i)
-	def execute(self):
-		while True:
+			else:
+				print(i.runner)
+				raise Exception("Error: Unknown instance type for plugin " + i.plugin._plugin.name)
+		self.run_ct = 0
+		self.time_started = -1
+	def execute(self, work_dir, remaining_runtime_others = 0):
+		ct = 0
+		for typ in self.types:
+			vallist = getattr(self, typ)
+			for i in vallist:
+				i.work_dir = os.path.join(work_dir, str(ct))
+				ct += 1
+		threads = []
+		for typ in self.types:
+			vallist = getattr(self, typ)
+			print(len(vallist))
+			for i in vallist:
+				t = InstallThread(i)
+				t.start()
+				threads.append(t)
+		success = True
+		for t in threads:
+			t.join()
+			if not t.success:
+				success = False
+		self.time_started = time.time()
+		while success:
+			for i in self.bgloads:
+				i.runner.pre(i.work_dir)
+			for i in self.benchmarks:
+				i.runner.pre(i.work_dir)
+
+			bgload_threads = []
+			bench_threads = []
+			monitor_thread = MonitorThread(self.monitors)
+			for i in self.bgloads:
+				t = RunnerThread(i)
+				bgload_threads.append(t)
+			for i in self.benchmarks:
+				t = RunnerThread(i)
+				bench_threads.append(t)
+
+
+			for i in self.monitors:
+				i.runner.pre(i.work_dir)
+			for t in bgload_threads:
+				t.start()
+			monitor_thread.start()
+			for t in bench_threads:
+				t.start()
+
+			# Everything is running now, wait for benchmarks
+
+			for i in bench_threads:
+				t.join()
+			monitor_thread.send_stop()
+			for t in bgload_threads:
+				t.send_stop()
+			monitor_thread.join()
+			for t in bgload_threads:
+				t.join()
+
+			for i in self.bgloads:
+				i.runner.post(i.work_dir)
+			for i in self.benchmarks:
+				dat = i.runner.post(i.work_dir)
+				print(dat)
+			for i in self.monitors:
+				i.runner.post(i.work_dir)
+
+
 			# one run
-			pass
+			self.run_ct += 1
+
+
+		threads = []
+		for typ in self.types:
+			vallist = getattr(self, typ)
+			for i in vallist:
+				t = UninstallThread(i)
+				t.start()
+				threads.append(t)
+		for t in threads:
+			t.join()
+			if not t.success:
+				success = False
+		return success
 	def remaining_runtime(self):
 		return 10
 
 class Runner:
-	def run(self):
+	def run(self, work_dir):
 		raise NotImplementedError('Runner run not implemented')
-	def install(self, preperation_path):
+	def install(self, preperation_path, work_dir):
 		return True
-	def uninstall(self):
+	def uninstall(self, work_dir):
 		return True
-	def pre(self):
+	def pre(self, work_dir):
 		return True
-	def post(self):
+	def post(self, work_dir):
 		return True
 
 class BenchmarkRunner(Runner):
@@ -394,16 +553,16 @@ class BGLoadBenchRunner(BGLoadRunner):
 	def __init__(self, bench_runner):
 		self.bench_runner = bench_runner
 		self.shutdown = False
-	def install(self, preperation_path):
-		return self.bench_runner.install(preperation_path)
-	def uninstall(self):
-		return self.bench_runner.uninstall()
-	def pre(self):
-		return self.bench_runner.pre()
-	def post(self):
-		return self.bench_runner.post()
-	def run(self):
-		self.bench_runner.run()
+	def install(self, preperation_path, work_dir):
+		return self.bench_runner.install(preperation_path, work_dir)
+	def uninstall(self, work_dir):
+		return self.bench_runner.uninstall(work_dir)
+	def pre(self, work_dir):
+		return self.bench_runner.pre(work_dir)
+	def post(self, work_dir):
+		return self.bench_runner.post(work_dir)
+	def run(self, work_dir):
+		self.bench_runner.run(work_dir)
 		while not self.shutdown:
 			self.bench_runner.post()
 			self.bench_runner.pre()

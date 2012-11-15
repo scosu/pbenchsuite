@@ -351,6 +351,17 @@ def cmd_run(parsed):
 	for i in run_definitions:
 		run_instances.append(i._instantiate())
 
+
+	if parsed.work_dir == None:
+		work_dir = os.path.expanduser('~/.pbenchsuite/work_dirs/' + str(os.getpid()))
+	else:
+		work_dir = parsed.work_dir
+
+	print(len(run_instances))
+
+	for i in run_instances:
+		i.execute(work_dir)
+
 	return True
 
 
@@ -386,6 +397,7 @@ if __name__ == '__main__':
 			help='Run benchmarks and/or benchsuites',
 			formatter_class=argparse.RawTextHelpFormatter)
 	parser_run.set_defaults(func=cmd_run)
+	parser_run.add_argument('-w', '--work_dir', default=None)
 	parser_run.add_argument('-s', '--sysinfo', default='',
 			help="Additional system information about the current system state.")
 	parser_run.add_argument('-d', '--database', default='~/.pbenchsuite/results.sqlite',
