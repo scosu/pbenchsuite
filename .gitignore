@@ -5,3 +5,4 @@ monitors/.install_state
 results/
 state/
 *.pyc
+classes.dia\~
