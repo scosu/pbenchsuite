@@ -35,7 +35,7 @@ def category_to_type(cat):
 	return ''
 
 class PluginModule:
-	def __init__(self, mod):
+	def __init__(self, mod, prepare_path):
 		self.mod = mod
 		self.benchmark = {}
 		self.monitor = {}
@@ -43,6 +43,7 @@ class PluginModule:
 		self.visualizer = {}
 		self.merger = {}
 		self.benchsuite = {}
+		self.prepare_path = os.path.join(prepare_path, mod.__name__)
 
 	def print(self, indent = 0, indent_str = '  '):
 		ind = pbench._get_indentation(indent, indent_str)
@@ -62,14 +63,20 @@ class PluginManager:
 				exceptions.append(k)
 		for i in exceptions:
 			del self.benchsuite[i]
-	def __init__(self):
+	def __init__(self, prepare_dir):
 		self.module = {}
 		self.benchmark = {}
 		self.bgload = {}
 		self.monitor = {}
 		self.visualizer = {}
 		self.merger = {}
+
 		self.benchsuite = {}
+		try:
+			os.makedirs(prepare_dir, exist_ok=True)
+		except Exception as e:
+			print("Error, failed to create prepare directory " + prepare_dir + " " + str(e))
+			raise e
 
 		for _, name, ispkg in pkgutil.walk_packages(plugin.__path__):
 			if ispkg:
@@ -77,7 +84,7 @@ class PluginManager:
 			log.debug('Found plugin file ' + name + ', importing...')
 			m = __import__('plugin.' + name)
 			mod = getattr(m, name)
-			plug = PluginModule(mod)
+			plug = PluginModule(mod, prepare_dir)
 
 			log.debug('Loading available plugins from module ' + name)
 			try:
@@ -114,13 +121,12 @@ class PluginManager:
 					log.error(name + ': Double definition ' + plug_type + ' ' + i.name)
 					continue
 				getattr(plug, plug_type)[i.name] = i
-				i._plugin_mod = mod
+				i._plugin_mod = plug
 
 
 
 			log.debug('Module ' + name + ' defines valid plugins')
 			# Everything was successfull, store the module
-			plug._plugin_mod = mod
 			self.module[name] = plug
 			for typ in plugin_types:
 				for k,v in getattr(plug, typ).items():
@@ -286,7 +292,7 @@ def cmd_prepare(parsed):
 
 def cmd_run(parsed):
 	plugins = []
-	p = PluginManager()
+	p = PluginManager(os.path.expanduser(parsed.package_dir))
 	for combo in parsed.bench:
 		# parse <ID>;<ID>:<OPTION>,<OPTION>;<ID>
 		for id in combo.split(';'):

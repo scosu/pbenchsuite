@@ -7,12 +7,23 @@ import time
 import shutil
 import threading
 
+
+#
+# Some helper functions
+################################################################################
+
+
 def get_executable_path(name):
 	for path in os.environ['PATH'].split(os.pathsep):
 		exec_path = os.path.join(path, name)
 		if os.path.isfile(exec_path) and os.access(exec_path, os.X_OK):
 			return exec_path
 	return None
+
+
+#
+# Helper functions for internal use only
+################################################################################
 
 def _init_list(parameter):
 	if isinstance(parameter, list):
@@ -53,7 +64,10 @@ def _print_block_text(text, width=80, indent=0, indent_str='  '):
 	print(output)
 
 class ValueType:
-	""" Class describing a value type """
+	"""
+	Class describing a value type. Necessary to translate results into
+	a database scheme.
+	"""
 	def __init__(self, unit, datatype = 'int', description = None):
 		"""
 			unit, correct unit string
@@ -65,7 +79,10 @@ class ValueType:
 		self.datatype = datatype
 
 class Requirement:
-	""" Requirement of any kind """
+	"""
+	Requirement of any kind. Please also create Requirement objects for
+	fullfilled requirements.
+	"""
 	def __init__(self, name, description = None, version=None, found=True):
 		self.name = name
 		self.description = description
@@ -82,6 +99,11 @@ class Requirement:
 		return ret
 
 class Option:
+	"""
+	Available option. All available options are passed to the runner
+	with a value. If you do not set a default, your runner should be
+	able to handle None values.
+	"""
 	def __init__(self, name, description = None, default = None):
 		self.name = name
 		self.description = description
@@ -110,7 +132,7 @@ class OptionValue:
 class Plugin:
 	def __init__(self, name, intern_version, description = None,
 			available_options = None, requirements = None):
-		self._plugin_mod = None
+		self._plug_mod = None
 		self.name = name
 		self.description = description
 		self.intern_version = intern_version
@@ -152,6 +174,7 @@ class Plugin:
 		self._print_data_only(indent+1, indent_str)
 	def _generate_option_values(self, opts):
 		vals = []
+		print("nr opts " + str(len(self.available_options)))
 		for opt in self.available_options:
 			vals.append(OptionValue(opt, opts))
 		return vals
@@ -161,6 +184,13 @@ class Plugin:
 			if i.missing():
 				ret.append(i)
 		return ret
+	def get_huid(self):
+		huid = ''
+		if self._mod != None:
+			huid = self._mod.__name__ + '_'
+		huid += self.name + '_'
+		huid += self.intern_version
+		return huid
 
 
 
@@ -214,6 +244,9 @@ class DataCollector(Plugin):
 				self.name
 				+ self.data_version
 				+ self.intern_version).encode('utf-8')).hexdigest()
+	def get_huid(self):
+		huid = super(DataCollector, self).get_huid() + '_'
+		return huid + self.data_version
 
 class Benchmark(DataCollector):
 	def __init__(self, name, data_version, intern_version, description = None,
@@ -244,6 +277,9 @@ class Monitor(DataCollector):
 	pass
 
 class RunSetting:
+	"""
+	Settings for the execution of one or multiple benchmarks
+	"""
 	def __init__(self, min_runs = 2, min_runtime = 0, percent_stderr = 0,
 			max_runtime = None, max_runs = None):
 		""" min_runtime and max_runtime are runtimes per independent value """
@@ -254,6 +290,12 @@ class RunSetting:
 		self.max_runs = max_runs
 
 class PluginRunDef:
+	"""
+	Defines the run setup for one plugin. plugin_name is a plugin identifier.
+	The instance is used to define benchsuite plugins or to translate
+	command line arguments into objects. Every Plugin Run Definition is embedded
+	into a RunCombination, even if it contains just one instance.
+	"""
 	def __init__(self, plugin_name, options_dict = None):
 		self.plugin_name = plugin_name
 		self.options_dict = _init_dict(options_dict)
@@ -271,13 +313,13 @@ class PluginRunDef:
 		try:
 			opts = self._plugin._generate_option_values(self.options_dict)
 			if isinstance(self._plugin, Benchmark):
-				runner = self._plugin._plugin_mod.create_benchmark(self._plugin.name, opts)
+				runner = self._plugin._plugin_mod.mod.create_benchmark(self._plugin.name, opts)
 				if self.is_bgload:
 					runner = BGLoadBenchRunner(runner)
 			elif isinstance(self._plugin, Monitor):
-				runner = self._plugin._plugin_mod.create_monitor(self._plugin.name, opts)
+				runner = self._plugin._plugin_mod.mod.create_monitor(self._plugin.name, opts)
 			elif isinstance(self._plugin, BGLoad):
-				runner = self._plugin._plugin_mod.create_bgload(self._plugin.name, opts)
+				runner = self._plugin._plugin_mod.mod.create_bgload(self._plugin.name, opts)
 		except Exception as e:
 			raise Exception("Problem creating an instance of a plugin for " + self.plugin_name + " " + str(e))
 		if runner == None:
@@ -335,13 +377,15 @@ class Benchsuite(Plugin):
 		return ret
 
 class DefRunnerTuple:
-	def __init__(self, plugin, runner):
-		self.plugin = plugin
+	def __init__(self, plug_def, runner):
+		self.plug_def = plug_def
 		self.runner = runner
 		self.work_dir = None
+	def run(self):
+		self.runner.run(self.work_dir)
 class DefResultTuple:
-	def __init__(self, plugin, result, time):
-		self.plugin = plugin
+	def __init__(self, plug_def, result, time):
+		self.plug_def = plug_def
 		self.result = result
 		self.time = time
 
@@ -366,7 +410,7 @@ class InstallThread(threading.Thread):
 			print("Error creating work dir for plugin " + self.runnertup.plugin._plugin.name)
 			self.success = False
 			return
-		self.success = self.runnertup.runner.install(self.runnertup.plugin._plugin._plugin_mod.get_prepare_path())
+		self.success = self.runnertup.runner.install(self.runnertup.plug_def._plugin._plugin_mod.prepare_path, self.runnertup.work_dir)
 		if not self.success:
 			print("Error: Failed installing plugin " + self.runnertup.plugin.name)
 class UninstallThread(threading.Thread):
@@ -390,7 +434,7 @@ class RunnerThread(threading.Thread):
 		self.success = False
 		self.runnertup = runnertup
 	def run(self):
-		self.success = self.runnertup.run(self.runnertup.work_dir)
+		self.success = self.runnertup.run()
 	def send_stop(self):
 		self.runnertup.stop()
 class MonitorThread(threading.Thread):
