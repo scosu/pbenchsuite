@@ -7,6 +7,7 @@ import traceback
 import threading
 import os
 import sys
+import signal
 
 import pbench
 import plugin
@@ -14,6 +15,19 @@ import plugin
 logging.basicConfig()
 log = logging.getLogger()
 
+glbl_shutdown = False
+
+def sig_handler(signum, frame):
+	global glbl_shutdown
+	if glbl_shutdown:
+		print("Forced shutdown, there may be child processes left running")
+		sys.exit(1)
+	print("Triggered shutdown, waiting for tasks to finish, this may take a while")
+	glbl_shutdown = True
+	pbench.glbl_shutdown = True
+
+signal.signal(signal.SIGINT, sig_handler)
+signal.signal(signal.SIGTERM, sig_handler)
 
 plugin_types = ['bgload', 'benchmark', 'monitor', 'visualizer', 'merger', 'benchsuite']
 
@@ -73,7 +87,8 @@ class PluginManager:
 
 		self.benchsuite = {}
 		try:
-			os.makedirs(prepare_dir, exist_ok=True)
+			if not os.path.isdir(prepare_dir):
+				os.makedirs(prepare_dir, exist_ok=True)
 		except Exception as e:
 			print("Error, failed to create prepare directory " + prepare_dir + " " + str(e))
 			raise e

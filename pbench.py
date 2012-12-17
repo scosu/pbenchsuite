@@ -7,6 +7,7 @@ import time
 import shutil
 import threading
 
+glbl_shutdown = False
 
 #
 # Some helper functions
@@ -395,6 +396,8 @@ class SuiteContext:
 		self.settings = settings
 	def execute(self, work_dir, remaining_runtime_others = 0):
 		for i in self.runctxts:
+			if glbl_shutdown:
+				break
 			i.execute(work_dir, remaining_runtime_others)
 
 class InstallThread(threading.Thread):
@@ -503,7 +506,7 @@ class RunContext:
 			if not t.success:
 				success = False
 		self.time_started = time.time()
-		while success:
+		while success and not glbl_shutdown:
 			for i in self.bgloads:
 				i.runner.pre(i.work_dir)
 			for i in self.benchmarks:
