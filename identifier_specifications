@@ -16,14 +16,16 @@ version strings:
 	In general version strings are:
 	MAJOR.MINOR.BUGFIX.[...]
 
-	VERSION ::= VERSION_LIMITER '@' VERSION
+	VERSION ::= VERSION_LIMITER VERSION
 	VERSION ::= VERSION_LIMITER
-	VERSION_LIMITER ::= '<' VERSION_STRING
-	VERSION_LIMITER ::= '<=' VERSION_STRING
-	VERSION_LIMITER ::= '>' VERSION_STRING
-	VERSION_LIMITER ::= '>=' VERSION_STRING
-	VERSION_LIMITER ::= '!=' VERSION_STRING
-	VERSION_LIMITER ::= '=' VERSION_STRING
+	VERSION_LIMITER ::= VERSION_TYPE '<' VERSION_STRING
+	VERSION_LIMITER ::= VERSION_TYPE '<=' VERSION_STRING
+	VERSION_LIMITER ::= VERSION_TYPE '>' VERSION_STRING
+	VERSION_LIMITER ::= VERSION_TYPE '>=' VERSION_STRING
+	VERSION_LIMITER ::= VERSION_TYPE '!=' VERSION_STRING
+	VERSION_LIMITER ::= VERSION_TYPE '=' VERSION_STRING
+	VERSION_TYPE ::= '@i' # internal version
+	VERSION_TYPE ::= '@d' # data format version
 	VERSION_STRING is the version propagated by the plugins. pbenchsuite
 	processes all version comparisons from left to right. That means you can
 	specify a major version for example this way: '=3', instead of '>=3.0.0.0;<4.0.0.0'
@@ -38,7 +40,7 @@ plugin identifiers:
 	PLUGIN_TYPE ::= 'merger'
 	PLUGIN_TYPE ::= 'visualizer'
 	PLUGIN_VERSION ::= ''
-	PLUGIN_VERSION ::= '@' VERSION
+	PLUGIN_VERSION ::= VERSION
 
 option:
 	OPTIONS ::= OPTIONS ':' OPTION
