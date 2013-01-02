@@ -64,6 +64,54 @@ def _print_block_text(text, width=80, indent=0, indent_str='  '):
 	output = output[:-1]
 	print(output)
 
+def version_compare(v1, v2, match_mode=False):
+	vs1 = v1.split('.')
+	vs2 = v2.split('.')
+	end = min(len(vs1), len(vs2))
+	for i in range(end):
+		try:
+			i1 = int(vs1[i])
+		except:
+			return 1
+		try:
+			i2 = int(vs2[i])
+		except:
+			return -1
+		if i1 < i2:
+			return -1
+		if i2 < i1:
+			return 1
+	if len(vs1) < len(vs2):
+		if match_mode:
+			return 0
+		return -1
+	if len(vs2) < len(vs1):
+		return 1
+	return 0
+
+def version_match(vmatch, version):
+	if len(vmatch) > 2 and vmatch[:2] in ['<=', '!=', '>=']:
+		matches = version_compare(vmatch[2:], version, match_mode = True)
+		if vmatch[:2] == '<=' and (matches == 1 or matches == 0):
+			return 1
+		if vmatch[:2] == '>=' and (matches == -1 or matches == 0):
+			return 1
+		if vmatch[:2] == '!=' and (matches == -1 or matches == 1):
+			return 1
+	elif vmatch[0] in ['<', '=', '>']:
+		matches = version_compare(vmatch[1:], version, match_mode = True)
+		if vmatch[0] == '<' and matches == 1:
+			return 1
+		if vmatch[0] == '>' and matches == -1:
+			return 1
+		if vmatch[0] == '=' and matches == 0:
+			return 1
+	else:
+		print('Error: invalid version matching string \'' + vmatch + '\'')
+		raise Exception('Error: invalid version matching string \'' + vmatch + '\'')
+	return 0
+
+
 class ValueType:
 	"""
 	Class describing a value type. Necessary to translate results into
@@ -192,6 +240,8 @@ class Plugin:
 		huid += self.name + '_'
 		huid += self.intern_version
 		return huid
+	def cmp(self, plug):
+		return version_compare(self.intern_version, plug.intern_version)
 
 
 
