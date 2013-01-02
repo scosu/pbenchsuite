@@ -69,13 +69,23 @@ def version_compare(v1, v2, match_mode=False):
 	vs2 = v2.split('.')
 	end = min(len(vs1), len(vs2))
 	for i in range(end):
+		notint = 0
 		try:
 			i1 = int(vs1[i])
 		except:
-			return 1
+			notint = 1
 		try:
 			i2 = int(vs2[i])
 		except:
+			notint += 2
+		if notint == 3:
+			if vs1[i] < vs2[i]:
+				return -1
+			if vs2[i] < vs1[i]:
+				return 1
+		elif notint == 1:
+			return 1
+		elif notint == 2:
 			return -1
 		if i1 < i2:
 			return -1
