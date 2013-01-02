@@ -135,7 +135,11 @@ class PluginManager:
 				if i.name in plug.bgload:
 					log.error(name + ': Double definition ' + plug_type + ' ' + i.name)
 					continue
-				getattr(plug, plug_type)[i.name] = i
+				ins_dict = getattr(plug, plug_type)
+				if i.name not in ins_dict:
+					ins_dict[i.name] = PluginSet()
+				ins_dict[i.name].add(i)
+
 				i._plugin_mod = plug
 
 
@@ -217,7 +221,24 @@ class PluginManager:
 		return list(self.module.values())
 
 class PluginSet:
-	pass
+	"""PluginSet gathers all different versions of one plugin name"""
+	def __init__(self):
+		self.sorted_plugins = []
+	def add(self, plug):
+		def plug_cmp(p1, p2):
+			return p1.cmp(p2)
+		# TODO add key= argument for plugin version compare function
+		self.sorted_plugins = sorted(self.sorted_plugins + [plug], reverse=True)
+	def print(self, indent=0, indent_str='  '):
+		ind = pbench._get_indentation(indent, indent_str)
+		self.sorted_plugins[0].print(indent, indent_str)
+		if len(self.sorted_plugins) > 1:
+			print(ind + "Other available versions:")
+			for i in self.sorted_plugins[1:]:
+				i.print_version(indent+1, indent_str)
+	def _gather_plugins(self, pm):
+		for p in self.sorted_plugins:
+			p._gather_plugins(pm)
 
 def plugins_to_modules(plugins):
 	modules = []

@@ -195,8 +195,7 @@ class Plugin:
 			print(ind + 'Description')
 			_print_block_text(self.description, indent=indent+1,
 					indent_str = indent_str)
-		if self.intern_version != None:
-			print(ind + 'Internal version: ' + self.intern_version)
+		self.print_version(indent, indent_str)
 		if self.requirements != None:
 			missing = []
 			fullfilled = []
@@ -221,6 +220,11 @@ class Plugin:
 		ind = _get_indentation(indent, indent_str)
 		print(ind + 'Plugin ' + self.name)
 		self._print_data_only(indent+1, indent_str)
+
+	def print_version(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'Version: i' + self.intern_version)
+
 	def _generate_option_values(self, opts):
 		vals = []
 		print("nr opts " + str(len(self.available_options)))
@@ -298,6 +302,10 @@ class DataCollector(Plugin):
 	def get_huid(self):
 		huid = super(DataCollector, self).get_huid() + '_'
 		return huid + self.data_version
+
+	def print_version(self, indent=0, indent_str='  '):
+		ind = _get_indentation(indent, indent_str)
+		print(ind + 'Version: d' + self.data_version + ' i' + self.intern_version)
 
 class Benchmark(DataCollector):
 	def __init__(self, name, data_version, intern_version, description = None,
