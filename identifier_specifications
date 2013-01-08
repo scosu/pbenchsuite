@@ -18,14 +18,15 @@ version strings:
 
 	VERSION ::= VERSION_LIMITER VERSION
 	VERSION ::= VERSION_LIMITER
-	VERSION_LIMITER ::= VERSION_TYPE '<' VERSION_STRING
-	VERSION_LIMITER ::= VERSION_TYPE '<=' VERSION_STRING
-	VERSION_LIMITER ::= VERSION_TYPE '>' VERSION_STRING
-	VERSION_LIMITER ::= VERSION_TYPE '>=' VERSION_STRING
-	VERSION_LIMITER ::= VERSION_TYPE '!=' VERSION_STRING
-	VERSION_LIMITER ::= VERSION_TYPE '=' VERSION_STRING
-	VERSION_TYPE ::= '@i' # internal version
-	VERSION_TYPE ::= '@d' # data format version
+	VERSION_LIMITER ::= '@' VERSION_COMPONENT '<' VERSION_STRING
+	VERSION_LIMITER ::= '@' VERSION_COMPONENT '<=' VERSION_STRING
+	VERSION_LIMITER ::= '@' VERSION_COMPONENT '>' VERSION_STRING
+	VERSION_LIMITER ::= '@' VERSION_COMPONENT '>=' VERSION_STRING
+	VERSION_LIMITER ::= '@' VERSION_COMPONENT '!=' VERSION_STRING
+	VERSION_LIMITER ::= '@' VERSION_COMPONENT '=' VERSION_STRING
+	VERSION_COMPONENT is the plugin internal component name for the version
+		limiter. This may be the version of used programs like bzip2, gzip
+		and so on.
 	VERSION_STRING is the version propagated by the plugins. pbenchsuite
 	processes all version comparisons from left to right. That means you can
 	specify a major version for example this way: '=3', instead of '>=3.0.0.0;<4.0.0.0'

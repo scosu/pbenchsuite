@@ -37,8 +37,8 @@ def register():
 
 	b1 = pbench.Benchmark(
 			"7zip-bench",
-			data_version = "1.0",
-			intern_version = version,
+			data_fmt_ver = "1.0",
+			component_versions = {'p7zip': version},
 			description = '7zip compression/decompression benchmark. CPU-intensive 7zip benchmark. Not using files.',
 			requirements = [req],
 			valuetypes = valuetypedict,

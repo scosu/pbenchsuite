@@ -10,8 +10,8 @@ def register():
 	opt2 = pbench.Option('option2', description='option2 int threads')
 	b1 = pbench.Benchmark(
 			"dummy1",
-			data_version = "1.0",
-			intern_version = "bzip2_gzip1",
+			data_fmt_ver = "1.0",
+			component_versions = {'bzip2': '1.0.6', 'gzip': '1.5'},
 			description = 'dummy1 is the first out of two dummy ' +
 					'benchmarks that should help you to ' +
 					'understand pbenchsuite.',
@@ -19,16 +19,24 @@ def register():
 			valuetypes = valuetypedict)
 	b2 = pbench.Benchmark(
 			"dummy2",
-			data_version = "1.0",
-			intern_version = "1.0",
+			data_fmt_ver = "1.0",
+			component_versions = {'plugin': '0.9'},
+			description = 'dummy2 is the second dummy',
+			requirements = [rq1, rq2],
+			valuetypes = valuetypedict,
+			available_options = [opt1, opt2])
+	b3 = pbench.Benchmark(
+			"dummy2",
+			data_fmt_ver = "1.1",
+			component_versions = {'plugin': '0.9'},
 			description = 'dummy2 is the second dummy',
 			requirements = [rq1, rq2],
 			valuetypes = valuetypedict,
 			available_options = [opt1, opt2])
 	monitor1 = pbench.Monitor(
 			"dummy_monitor",
-			data_version = ".0",
-			intern_version = "1.0",
+			data_fmt_ver = ".0",
+			component_versions = {'plug': '1.0'},
 			description = 'this is the registration of a dummy monitor',
 			valuetypes = valuetypedict)
 	runcombo1 = pbench.RunCombination([pbench.PluginRunDef('benchmark.dummy1'),
@@ -37,7 +45,7 @@ def register():
 	runcombo2 = pbench.RunCombination([pbench.PluginRunDef('benchmark.dummy1'),
 					pbench.PluginRunDef('benchmark.dummy2')])
 	suite1 = pbench.Benchsuite('testbenchsuite', [runcombo1, runcombo2])
-	return [b1, b2, monitor1, suite1]
+	return [b1, b2, b3, monitor1, suite1]
 
 def prepare_installation(preperation_path):
 	# Prepare all datafiles and everything for the installation.

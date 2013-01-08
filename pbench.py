@@ -189,12 +189,15 @@ class OptionValue:
 		return self.value
 
 class Plugin:
-	def __init__(self, name, intern_version, description = None,
+	def __init__(self, name, component_versions=None, description = None,
 			available_options = None, requirements = None):
 		self._plug_mod = None
 		self.name = name
 		self.description = description
-		self.intern_version = intern_version
+		if component_versions == None:
+			self.component_versions = {}
+		else:
+			self.component_versions = component_versions
 		self.available_options = _init_list(available_options)
 		self.requirements = _init_list(requirements)
 	def _print_data_only(self, indent=0, indent_str='  '):
@@ -233,7 +236,10 @@ class Plugin:
 
 	def print_version(self, indent=0, indent_str='  '):
 		ind = _get_indentation(indent, indent_str)
-		print(ind + 'Version: i' + self.intern_version)
+		versions_used = ''
+		for k,v in self.component_versions.items():
+			versions_used += k + '=' + v + '  '
+		print(ind + 'Version: ' + versions_used)
 
 	def _generate_option_values(self, opts):
 		vals = []
@@ -251,13 +257,37 @@ class Plugin:
 		huid = ''
 		if self._mod != None:
 			huid = self._mod.__name__ + '_'
-		huid += self.name + '_'
-		huid += self.intern_version
+		huid += self.name
+		for k,v in self.component_versions.items():
+			huid += '__' + k + '__' + v
 		return huid
+	def get_uid(self):
+		return hashlib.sha1(self.get_huid()).encode('utf-8').hexdigest()
 	def cmp(self, plug):
-		return version_compare(self.intern_version, plug.intern_version)
-
-
+		for k in sorted(self.component_versions.keys()):
+			if k not in plug.component_versions:
+				continue
+			ret = version_compare(self.component_versions[k],
+					plug.component_versions[k])
+			if ret != 0:
+				return ret
+		if len(self.component_versions) > len(plug.component_versions):
+			return 1
+		elif len(self.component_versions) < len(plug.component_versions):
+			return -1
+		return 0
+	def __lt__(self, plug):
+		return self.cmp(plug) > 0
+	def __gt__(self, plug):
+		return self.cmp(plug) < 0
+	def __eq__(self, plug):
+		return self.cmp(plug) == 0
+	def __le__(self, plug):
+		return self.cmp(plug) >= 0
+	def __ge__(self, plug):
+		return self.cmp(plug) <= 0
+	def __ne__(self, plug):
+		return self.cmp(plug) != 0
 
 class Merger(Plugin):
 	def print(self, indent=0, indent_str='  '):
@@ -291,39 +321,29 @@ class BGLoadWrapped(Plugin):
 
 class DataCollector(Plugin):
 	""" Benchmark class """
-	def __init__(self, name, data_version, intern_version, description = None,
+	def __init__(self, name, data_fmt_ver, component_versions = None, description = None,
 			valuetypes = None, requirements = None, available_options = None):
+		comp_vers = {}
+		for k,v in component_versions.items():
+			comp_vers[k] = v
+		comp_vers['data_fmt'] = data_fmt_ver
 		super(DataCollector, self).__init__(name = name,
 				description = description,
-				intern_version = intern_version,
+				component_versions = comp_vers,
 				requirements = requirements,
 				available_options = available_options)
 		if '.' in name or ',' in name:
 			raise Exception("Error: '.' not allowed in name '"
 					+ name + "'")
-		self.data_version = data_version
 		self.valuetypes = valuetypes
 
-	def get_id(self):
-		return hashlib.sha1(str(
-				self.name
-				+ self.data_version
-				+ self.intern_version).encode('utf-8')).hexdigest()
-	def get_huid(self):
-		huid = super(DataCollector, self).get_huid() + '_'
-		return huid + self.data_version
-
-	def print_version(self, indent=0, indent_str='  '):
-		ind = _get_indentation(indent, indent_str)
-		print(ind + 'Version: d' + self.data_version + ' i' + self.intern_version)
-
 class Benchmark(DataCollector):
-	def __init__(self, name, data_version, intern_version, description = None,
+	def __init__(self, name, data_fmt_ver, component_versions = None, description = None,
 			valuetypes = None, requirements = None, available_options = None,
 			nr_independent_values = 1):
 		super(Benchmark, self).__init__(name = name,
-				data_version = data_version,
-				intern_version = intern_version,
+				data_fmt_ver = data_fmt_ver,
+				component_versions = component_versions,
 				description = description,
 				valuetypes = valuetypes,
 				requirements = requirements,
@@ -422,7 +442,7 @@ class Benchsuite(Plugin):
 			setting = None):
 		super(Benchsuite, self).__init__(name = name,
 				description = description,
-				intern_version = version)
+				component_versions = {'suite_version': version})
 		self.run_combos = run_combos
 		self.setting = setting
 		self.found_components = False

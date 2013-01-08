@@ -225,17 +225,15 @@ class PluginSet:
 	def __init__(self):
 		self.sorted_plugins = []
 	def add(self, plug):
-		def plug_cmp(p1, p2):
-			return p1.cmp(p2)
-		# TODO add key= argument for plugin version compare function
-		self.sorted_plugins = sorted(self.sorted_plugins + [plug], reverse=True)
+		self.sorted_plugins.append(plug)
+		self.sorted_plugins.sort()
 	def print(self, indent=0, indent_str='  '):
-		ind = pbench._get_indentation(indent, indent_str)
+		ind = pbench._get_indentation(indent+1, indent_str)
 		self.sorted_plugins[0].print(indent, indent_str)
 		if len(self.sorted_plugins) > 1:
 			print(ind + "Other available versions:")
 			for i in self.sorted_plugins[1:]:
-				i.print_version(indent+1, indent_str)
+				i.print_version(indent+2, indent_str)
 	def _gather_plugins(self, pm):
 		for p in self.sorted_plugins:
 			p._gather_plugins(pm)
@@ -303,7 +301,7 @@ def prepare_plugins(plugins):
 	return success
 
 def cmd_info(parsed):
-	p = PluginManager()
+	p = PluginManager(os.path.expanduser(parsed.package_dir))
 	if len(parsed.identifier) == 0:
 		p.print_modules(indent_str='    ')
 	else:
@@ -315,7 +313,7 @@ def cmd_info(parsed):
 			print("")
 
 def cmd_prepare(parsed):
-	p = PluginManager()
+	p = PluginManager(os.path.expanduser(parsed.package_dir))
 	plugs = []
 	if len(parsed.identifier) == 0:
 		plugs = p.get_all_plugins()
