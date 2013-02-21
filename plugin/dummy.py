@@ -67,7 +67,7 @@ class dummy_run(pbench.BenchmarkRunner):
 		self.time = 0
 		return result
 
-def create_benchmark(benchmark_name, options):
+def create_benchmark(benchmark_name, intern_version, data_version, options):
 	return dummy_run()
 
 def create_monitor(monitor_name, options):

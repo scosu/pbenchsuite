@@ -29,7 +29,7 @@ def sig_handler(signum, frame):
 signal.signal(signal.SIGINT, sig_handler)
 signal.signal(signal.SIGTERM, sig_handler)
 
-plugin_types = ['bgload', 'benchmark', 'monitor', 'visualizer', 'merger', 'benchsuite']
+plugin_types = ['bgload', 'benchmark', 'cooldown', 'monitor', 'visualizer', 'merger', 'benchsuite', 'sysinfo']
 
 def category_to_type(cat):
 	cat = cat.lower()
@@ -57,6 +57,7 @@ class PluginModule:
 		self.visualizer = {}
 		self.merger = {}
 		self.benchsuite = {}
+		self.sysinfo = {}
 		self.prepare_path = os.path.join(prepare_path, mod.__name__)
 
 	def print(self, indent = 0, indent_str = '  '):
@@ -84,7 +85,7 @@ class PluginManager:
 		self.monitor = {}
 		self.visualizer = {}
 		self.merger = {}
-
+		self.sysinfo = {}
 		self.benchsuite = {}
 		try:
 			if not os.path.isdir(prepare_dir):
@@ -124,6 +125,8 @@ class PluginManager:
 					plug_type = 'merger'
 				elif isinstance(i, pbench.Benchsuite):
 					plug_type = 'benchsuite'
+				elif isinstance(i, pbench.SysInfo):
+					plug_type = 'sysinfo'
 
 				if plug_type == None:
 					log.error(name + ": Unknown plugin type, object " + str(i))
@@ -170,6 +173,28 @@ class PluginManager:
 					v.print(indent = indent + 1, indent_str = indent_str)
 					print("")
 
+	# see identifier specifications for the full grammar
+	def parse_full_identifiers(self, data):
+		ctxts = data.split(';')
+		for ctxt in ctxts:
+			ctxt, s, option_part = ctxt.partition(':')
+			ctxt, s, ver_part = ctxt.partition('@')
+			ver_part = ver_part
+
+			ver_conditions = ver_part.split('@')
+
+			option_dict = {}
+			for i in option_part.split(':'):
+				optk, s, optv = i.partition('=')
+				if s == '':
+					option_dict[optk] = True
+				else:
+					option_dict[optk] = optv
+
+			plugin_type, s, plugin_name = ctxt.partition('.')
+			if s == '':
+				plugin_name = plugin_type
+				plugin_type = ''
 
 	def get_plugins_by_identifier(self, id, category=None):
 		type_filter = None

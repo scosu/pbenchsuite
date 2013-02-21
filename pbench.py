@@ -289,6 +289,21 @@ class Plugin:
 	def __ne__(self, plug):
 		return self.cmp(plug) != 0
 
+class SysInfo(Plugin):
+	def __init__(self, name, component_versions, description = None,
+			valuetypes = None, requirements = None, available_options = None):
+		super(DataCollector, self).__init__(name = name,
+				description = description,
+				component_versions = component_versions,
+				requirements = requirements,
+				available_options = available_options)
+		self.valuetypes = valuetypes
+	def get_sysinfo(self):
+		""" Return a flat dict here, with system information.
+		You can find the data after pbenchsuite execution in the
+		system information table with the field name MODULE_NAME.PLUGIN_NAME.DICT_KEY"""
+		raise Exception("Not implemented: SysInfo plugin has to implement function 'get_sysinfo'")
+
 class Merger(Plugin):
 	def print(self, indent=0, indent_str='  '):
 		ind = _get_indentation(indent, indent_str)
