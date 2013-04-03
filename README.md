@@ -1,6 +1,8 @@
 PBenchSuite
 ==========
 
+**pbenchsuite is deprecated, please use [cbenchsuite](https://github.com/scosu/cbenchsuite) instead**
+
 Python Benchmark Suite to automatically benchmark linux systems and especially the linux kernel.
 
 Features
