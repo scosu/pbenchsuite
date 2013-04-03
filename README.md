@@ -6,6 +6,8 @@ Version 0.2 is the last and unfinished version with json backend. This release i
 PBenchSuite
 ==========
 
+**pbenchsuite is deprecated, please use [cbenchsuite](https://github.com/scosu/cbenchsuite) instead**
+
 Python Benchmark Suite to automatically benchmark linux systems and especially the linux kernel.
 
 Features
